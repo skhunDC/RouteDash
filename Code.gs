@@ -92,10 +92,13 @@ function getRandomQuote() {
       props.setProperty('weeklyQuote', newQuote);
       props.setProperty('weeklyQuoteDate', now.toISOString());
       quote = newQuote;
+    } else {
+      // fetch failed; use a random fallback without updating the timestamp
+      quote = FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
     }
   }
 
-  return quote || 'Quote unavailable';
+  return quote || FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
 }
 
 var FALLBACK_QUOTES = [
@@ -116,8 +119,8 @@ function fetchQuote() {
   } catch (e) {
     // ignore errors and fall through
   }
-  // Use a random local quote as a fallback
-  return FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
+  // return null to indicate failure so caller can decide how to handle
+  return null;
 }
 
 function getHeaderTitle() {
