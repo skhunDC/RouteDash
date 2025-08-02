@@ -74,14 +74,14 @@ function saveDriverOfTheWeek(name) {
 
 function getRandomQuote() {
   var props = PropertiesService.getScriptProperties();
-  var quote = props.getProperty('weeklyQuote');
-  var timestamp = props.getProperty('weeklyQuoteDate');
+  var quote = props.getProperty('dailyQuote');
+  var timestamp = props.getProperty('dailyQuoteDate');
   var now = new Date();
   var needNew = true;
 
   if (quote && timestamp) {
     var last = new Date(timestamp);
-    if (now.getTime() - last.getTime() < 7 * 24 * 60 * 60 * 1000) {
+    if (now.getTime() - last.getTime() < 24 * 60 * 60 * 1000) {
       needNew = false;
     }
   }
@@ -89,8 +89,8 @@ function getRandomQuote() {
   if (needNew) {
     var newQuote = fetchQuote();
     if (newQuote) {
-      props.setProperty('weeklyQuote', newQuote);
-      props.setProperty('weeklyQuoteDate', now.toISOString());
+      props.setProperty('dailyQuote', newQuote);
+      props.setProperty('dailyQuoteDate', now.toISOString());
       quote = newQuote;
     } else {
       // fetch failed; use a random fallback without updating the timestamp
@@ -109,12 +109,12 @@ var FALLBACK_QUOTES = [
 ];
 
 function fetchQuote() {
-  var url = 'https://api.quotable.io/random';
+  var url = 'https://zenquotes.io/api/random';
   try {
     var response = UrlFetchApp.fetch(url);
     var data = JSON.parse(response.getContentText());
-    if (data && data.content && data.author) {
-      return data.content + ' — ' + data.author;
+    if (Array.isArray(data) && data.length > 0 && data[0].q && data[0].a) {
+      return data[0].q + ' — ' + data[0].a;
     }
   } catch (e) {
     // ignore errors and fall through
