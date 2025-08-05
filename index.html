@@ -24,7 +24,7 @@
         justify-content: space-between;
         background-color: #b30000;
         color: white;
-        padding: 20px;
+        padding: 10px 20px;
       }
       .header img { height: 120px; }
       .header-title { text-align: center; flex-grow: 1; }
@@ -34,10 +34,19 @@
         text-align: center;
         color: #ffd1d1;
         display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .weather span { line-height: 1.2; }
+      .header-controls {
+        text-align: center;
+        color: #ffd1d1;
+        display: flex;
         flex-direction: column;
         align-items: center;
       }
-      .weather div { line-height: 1.2; }
+      .header-controls div { line-height: 1.2; }
       .add-frame-btn,
       .lock-btn {
         margin-top: 8px;
@@ -912,10 +921,12 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="header-title">
         <h1 id="header-title" contenteditable="true">Route Operations Dashboard</h1>
         <div id="datetime" class="datetime"></div>
+        <div id="weather" class="weather">
+          <span id="weather-temp"></span>
+          <span id="weather-condition"></span>
+        </div>
       </div>
-      <div id="weather" class="weather">
-        <div id="weather-temp"></div>
-        <div id="weather-condition"></div>
+      <div class="header-controls">
         <button id="add-frame" class="add-frame-btn">Add Frame</button>
         <button id="lock-toggle" class="lock-btn"></button>
         <div id="upload-container" class="upload-container">
