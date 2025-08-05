@@ -38,7 +38,10 @@
       }
       .datetime .date,
       .datetime .time {
-        display: block;
+        display: inline-block;
+      }
+      .datetime .date {
+        margin-right: 8px;
       }
       .weather {
         text-align: center;
@@ -273,7 +276,7 @@
         function updateDateTime() {
           var now = new Date();
           document.getElementById('datetime').innerHTML =
-            '<span class="date">' + now.toLocaleDateString() + '</span>' +
+            '<span class="date">' + now.toLocaleDateString() + '</span> ' +
             '<span class="time">' + now.toLocaleTimeString() + '</span>';
         }
 
