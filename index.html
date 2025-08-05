@@ -296,7 +296,7 @@
           var condEl = document.getElementById('weather-condition');
           if (data) {
             iconEl.textContent = getWeatherIcon(data.condition);
-            tempEl.textContent = 'Temp: ' + data.temperature + '°F';
+            tempEl.textContent = data.temperature + '°F';
             condEl.textContent = data.condition;
           } else {
             iconEl.textContent = '';
