@@ -393,6 +393,7 @@
         btn.addEventListener('click', function() {
           framesLocked = !framesLocked;
           btn.textContent = framesLocked ? 'Unlock' : 'Lock';
+          if (!framesLocked) keepFramesInView();
         });
         btn.textContent = 'Unlock';
       }
@@ -873,7 +874,7 @@
       }
 
       function keepFramesInView() {
-        if (!framesLoaded) return;
+        if (!framesLoaded || framesLocked) return;
         var area = document.getElementById('viewing-area');
         var rect = area.getBoundingClientRect();
         var children = document.querySelectorAll('.viewing-area .frame');
