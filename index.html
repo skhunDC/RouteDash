@@ -111,6 +111,9 @@
         box-sizing: border-box;
         cursor: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PGxpbmUgeDE9IjEyIiB5MT0iMCIgeDI9IjEyIiB5Mj0iMjQiIHN0cm9rZT0iI2IzMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PGxpbmUgeDE9IjAiIHkxPSIxMiIgeDI9IjI0IiB5Mj0iMTIiIHN0cm9rZT0iI2IzMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTEiIHN0cm9rZT0iYmxhY2siIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==') 12 12, crosshair;
         font-size: 133%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
       .frame-header {
         background: #333;
@@ -160,6 +163,9 @@
       .spreadsheet {
         cursor: text;
         overflow: auto;
+        flex: 1 1 50%;
+        background: #fff;
+        min-height: 120px;
       }
       .spreadsheet table {
         border-collapse: collapse;
@@ -271,7 +277,118 @@
         height: 120px;
       }
 
+      .dashboard {
+        flex: 1 1 45%;
+        min-height: 160px;
+        border-top: 1px solid #e6e6e6;
+        padding: 8px 10px 12px;
+        background: #fafafa;
+        color: #2d2d2d;
+        overflow: auto;
+      }
+
+      .dashboard-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        gap: 8px;
+        font-weight: bold;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #333;
+      }
+
+      .dashboard-header select {
+        font-size: 12px;
+        padding: 3px 6px;
+      }
+
+      .dashboard-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+        align-items: flex-end;
+      }
+
+      .dashboard-form label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #555;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .dashboard-form input {
+        padding: 4px 6px;
+        font-size: 12px;
+      }
+
+      .dashboard-form button {
+        background: #b30000;
+        color: #fff;
+        border: none;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .dashboard-form button:hover {
+        background: #8c0000;
+      }
+
+      .dashboard-empty {
+        font-size: 12px;
+        color: #666;
+        font-style: italic;
+      }
+
+      .dashboard-list table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .dashboard-list th,
+      .dashboard-list td {
+        border-bottom: 1px solid #ddd;
+        padding: 4px 2px;
+        text-align: left;
+      }
+
+      .dashboard-list td.value {
+        text-align: right;
+        font-weight: 600;
+      }
+
+      .dashboard-remove {
+        background: none;
+        border: none;
+        color: #b30000;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .dashboard-remove:hover {
+        text-decoration: underline;
+      }
+
+      .dashboard-chart {
+        position: relative;
+        height: 190px;
+        margin-top: 10px;
+      }
+
+      .dashboard-chart canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         function updateDateTime() {
           var now = new Date();
@@ -426,6 +543,399 @@
       var driverImages = [];
       var pendingLoads = 0;
       var loadingInterval = null;
+      var chartInstances = {};
+      var frameIdCounter = 0;
+      var entryIdCounter = 0;
+
+      function generateFrameId() {
+        frameIdCounter += 1;
+        return 'frame-' + Date.now().toString(36) + '-' + frameIdCounter.toString(36);
+      }
+
+      function generateEntryId() {
+        entryIdCounter += 1;
+        return 'entry-' + Date.now().toString(36) + '-' + entryIdCounter.toString(36);
+      }
+
+      function createDefaultDashboard() {
+        return { chartType: 'line', data: [] };
+      }
+
+      function ensureFrameMetadata(frame) {
+        var updated = false;
+        if (!frame.id) {
+          frame.id = generateFrameId();
+          updated = true;
+        }
+        if (!frame.dashboard || typeof frame.dashboard !== 'object') {
+          frame.dashboard = createDefaultDashboard();
+          updated = true;
+        }
+        var allowedCharts = ['line', 'bar', 'pie'];
+        if (allowedCharts.indexOf(frame.dashboard.chartType) === -1) {
+          frame.dashboard.chartType = 'line';
+          updated = true;
+        }
+        if (!Array.isArray(frame.dashboard.data)) {
+          frame.dashboard.data = [];
+          updated = true;
+        }
+        frame.dashboard.data = frame.dashboard.data.map(function(entry) {
+          var changed = false;
+          if (!entry || typeof entry !== 'object') {
+            changed = true;
+            entry = { label: '', value: 0, date: '' };
+          }
+          if (!entry.id) {
+            entry.id = generateEntryId();
+            changed = true;
+          }
+          if (entry.label == null) {
+            entry.label = '';
+            changed = true;
+          } else {
+            entry.label = String(entry.label);
+          }
+          if (entry.date == null) {
+            entry.date = '';
+          } else {
+            entry.date = String(entry.date);
+          }
+          var numeric = typeof entry.value === 'number' ? entry.value : parseFloat(entry.value);
+          if (isNaN(numeric)) {
+            numeric = 0;
+            changed = true;
+          }
+          if (numeric !== entry.value) {
+            changed = true;
+          }
+          entry.value = numeric;
+          if (changed) updated = true;
+          return entry;
+        });
+        return updated;
+      }
+
+      function formatDateLabel(dateStr) {
+        if (!dateStr) return '';
+        var date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        return date.toLocaleDateString();
+      }
+
+      function defaultDashboardDate() {
+        var now = new Date();
+        var month = String(now.getMonth() + 1).padStart(2, '0');
+        var day = String(now.getDate()).padStart(2, '0');
+        return now.getFullYear() + '-' + month + '-' + day;
+      }
+
+      function getSortedDashboardData(dashboard) {
+        var copy = dashboard.data.slice();
+        copy.sort(function(a, b) {
+          var aDate = a.date ? new Date(a.date).getTime() : NaN;
+          var bDate = b.date ? new Date(b.date).getTime() : NaN;
+          var aValid = !isNaN(aDate);
+          var bValid = !isNaN(bDate);
+          if (aValid && bValid && aDate !== bDate) return aDate - bDate;
+          if (aValid && !bValid) return -1;
+          if (!aValid && bValid) return 1;
+          if (a.label && b.label && a.label !== b.label) {
+            return a.label.localeCompare(b.label);
+          }
+          return 0;
+        });
+        return copy;
+      }
+
+      function getEntryAxisLabel(entry, idx) {
+        if (entry.label && entry.label.trim()) return entry.label.trim();
+        var formatted = formatDateLabel(entry.date);
+        if (formatted) return formatted;
+        return 'Entry ' + (idx + 1);
+      }
+
+      function getEntrySummary(entry, idx) {
+        var formatted = formatDateLabel(entry.date);
+        if (entry.label && formatted) return formatted + ' — ' + entry.label;
+        if (entry.label) return entry.label;
+        if (formatted) return formatted;
+        return 'Entry ' + (idx + 1);
+      }
+
+      function buildColorPalette(count) {
+        var base = [
+          '#b30000',
+          '#ff6f61',
+          '#ffd166',
+          '#06d6a0',
+          '#118ab2',
+          '#073b4c',
+          '#8338ec',
+          '#ef476f'
+        ];
+        var palette = [];
+        for (var i = 0; i < count; i++) {
+          palette.push(base[i % base.length]);
+        }
+        return palette;
+      }
+
+      function buildChartConfig(frame, data) {
+        var type = frame.dashboard.chartType || 'line';
+        var labels = data.map(function(entry, idx) {
+          return getEntryAxisLabel(entry, idx);
+        });
+        var values = data.map(function(entry) {
+          return entry.value;
+        });
+        var datasetLabel = frame.title || 'Data';
+        if (type === 'pie') {
+          return {
+            type: 'pie',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  data: values,
+                  backgroundColor: buildColorPalette(values.length),
+                  borderColor: '#ffffff',
+                  borderWidth: 1
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: { boxWidth: 12, boxHeight: 12 }
+                }
+              }
+            }
+          };
+        }
+        var isLine = type === 'line';
+        return {
+          type: type,
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: datasetLabel,
+                data: values,
+                borderColor: '#b30000',
+                backgroundColor: isLine ? 'rgba(179, 0, 0, 0.18)' : '#ff6f61',
+                tension: isLine ? 0.35 : 0,
+                fill: isLine,
+                pointRadius: isLine ? 3 : 0,
+                pointBackgroundColor: '#b30000',
+                borderWidth: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { precision: 0 }
+              },
+              x: {
+                ticks: { autoSkip: true, maxRotation: 0 }
+              }
+            },
+            plugins: {
+              legend: { display: true, position: 'bottom' },
+              tooltip: {
+                mode: 'index',
+                intersect: false
+              }
+            }
+          }
+        };
+      }
+
+      function destroyDashboard(frameId) {
+        if (chartInstances[frameId]) {
+          chartInstances[frameId].destroy();
+          delete chartInstances[frameId];
+        }
+      }
+
+      function updateDashboardChart(frame, data, canvas) {
+        if (!canvas || typeof Chart === 'undefined') return;
+        destroyDashboard(frame.id);
+        if (!data.length) {
+          return;
+        }
+        chartInstances[frame.id] = new Chart(canvas.getContext('2d'), buildChartConfig(frame, data));
+      }
+
+      function refreshDashboard(index) {
+        var frameDiv = document.querySelector('.frame[data-index="' + index + '"] .dashboard');
+        if (frameDiv) {
+          renderDashboard(frameDiv, index);
+        }
+      }
+
+      function renderDashboard(container, index) {
+        var frame = frames[index];
+        if (!frame) return;
+        ensureFrameMetadata(frame);
+        var dashboard = frame.dashboard;
+        container.innerHTML = '';
+
+        var header = document.createElement('div');
+        header.className = 'dashboard-header';
+        var title = document.createElement('span');
+        title.textContent = 'Dashboard';
+        header.appendChild(title);
+
+        var typeLabel = document.createElement('label');
+        typeLabel.textContent = 'Chart';
+        var select = document.createElement('select');
+        select.innerHTML = '';
+        ['line', 'bar', 'pie'].forEach(function(option) {
+          var opt = document.createElement('option');
+          opt.value = option;
+          opt.textContent = option.charAt(0).toUpperCase() + option.slice(1);
+          select.appendChild(opt);
+        });
+        select.value = dashboard.chartType || 'line';
+        select.addEventListener('change', function() {
+          dashboard.chartType = select.value;
+          saveFrames();
+          renderDashboard(container, index);
+        });
+        typeLabel.appendChild(select);
+        header.appendChild(typeLabel);
+        container.appendChild(header);
+
+        var form = document.createElement('form');
+        form.className = 'dashboard-form';
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+        });
+
+        var dateField = document.createElement('label');
+        dateField.textContent = 'Date';
+        var dateInput = document.createElement('input');
+        dateInput.type = 'date';
+        var defaultDate = dashboard.data.length
+          ? (dashboard.data[dashboard.data.length - 1].date || defaultDashboardDate())
+          : defaultDashboardDate();
+        dateInput.value = defaultDate;
+        dateField.appendChild(dateInput);
+
+        var labelField = document.createElement('label');
+        labelField.textContent = 'Label';
+        var labelInput = document.createElement('input');
+        labelInput.type = 'text';
+        labelInput.placeholder = 'Week / note';
+        labelField.appendChild(labelInput);
+
+        var valueField = document.createElement('label');
+        valueField.textContent = 'Value';
+        var valueInput = document.createElement('input');
+        valueInput.type = 'number';
+        valueInput.step = '0.01';
+        valueField.appendChild(valueInput);
+
+        var addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.textContent = 'Add data';
+
+        addButton.addEventListener('click', function() {
+          var rawValue = parseFloat(valueInput.value);
+          if (isNaN(rawValue)) {
+            valueInput.focus();
+            return;
+          }
+          var entry = {
+            id: generateEntryId(),
+            date: dateInput.value || '',
+            label: labelInput.value.trim(),
+            value: rawValue
+          };
+          dashboard.data.push(entry);
+          dashboard.data = getSortedDashboardData(dashboard);
+          saveFrames();
+          renderDashboard(container, index);
+        });
+
+        form.appendChild(dateField);
+        form.appendChild(labelField);
+        form.appendChild(valueField);
+        form.appendChild(addButton);
+        container.appendChild(form);
+
+        var dataWrapper = document.createElement('div');
+        dataWrapper.className = 'dashboard-list';
+        var sortedData = getSortedDashboardData(dashboard);
+        if (sortedData.length === 0) {
+          destroyDashboard(frame.id);
+          var empty = document.createElement('div');
+          empty.className = 'dashboard-empty';
+          empty.textContent = 'No dashboard data yet. Add entries to visualize trends.';
+          dataWrapper.appendChild(empty);
+        } else {
+          var table = document.createElement('table');
+          var thead = document.createElement('thead');
+          var headRow = document.createElement('tr');
+          ['Entry', 'Value', ''].forEach(function(text) {
+            var th = document.createElement('th');
+            th.textContent = text;
+            headRow.appendChild(th);
+          });
+          thead.appendChild(headRow);
+          table.appendChild(thead);
+          var tbody = document.createElement('tbody');
+          sortedData.forEach(function(entry, idx) {
+            var row = document.createElement('tr');
+            var labelCell = document.createElement('td');
+            labelCell.textContent = getEntrySummary(entry, idx);
+            row.appendChild(labelCell);
+            var valueCell = document.createElement('td');
+            valueCell.className = 'value';
+            valueCell.textContent = entry.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+            row.appendChild(valueCell);
+            var actionCell = document.createElement('td');
+            var removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'dashboard-remove';
+            removeBtn.textContent = 'Remove';
+            removeBtn.addEventListener('click', function() {
+              dashboard.data = dashboard.data.filter(function(item) {
+                return item.id !== entry.id;
+              });
+              saveFrames();
+              renderDashboard(container, index);
+            });
+            actionCell.appendChild(removeBtn);
+            row.appendChild(actionCell);
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+          dataWrapper.appendChild(table);
+        }
+        container.appendChild(dataWrapper);
+
+        var chartContainer = document.createElement('div');
+        chartContainer.className = 'dashboard-chart';
+        var canvas = document.createElement('canvas');
+        chartContainer.appendChild(canvas);
+        container.appendChild(chartContainer);
+
+        if (sortedData.length === 0) {
+          canvas.style.display = 'none';
+        } else {
+          canvas.style.display = 'block';
+          updateDashboardChart(frame, sortedData, canvas);
+        }
+      }
 
       function incrementLoad() {
         pendingLoads++;
@@ -488,9 +998,16 @@
 
       function loadFrames(data) {
         frames = data || [];
-        frames.forEach(function(f, i) { createFrame(f, i); });
+        var metadataUpdated = false;
+        frames.forEach(function(frame) {
+          if (ensureFrameMetadata(frame)) metadataUpdated = true;
+        });
+        frames.forEach(function(f, i) {
+          createFrame(f, i);
+        });
         framesLoaded = true;
         keepFramesInView();
+        if (metadataUpdated) saveFrames();
       }
 
       function initDriver() {
@@ -516,12 +1033,14 @@
       }
       function addFrame() {
         var frame = {
+          id: generateFrameId(),
           x: 10,
           y: 10,
-          width: 200,
-          height: 150,
+          width: 320,
+          height: 360,
           title: 'Frame',
-          sheet: createDefaultSheet(3, 3)
+          sheet: createDefaultSheet(3, 3),
+          dashboard: createDefaultDashboard()
         };
         frames.push(frame);
         createFrame(frame, frames.length - 1);
@@ -531,6 +1050,7 @@
 
 
       function createFrame(frame, index) {
+        ensureFrameMetadata(frame);
         var area = document.getElementById('viewing-area');
         var div = document.createElement('div');
         div.className = 'frame';
@@ -539,6 +1059,7 @@
         div.style.width = frame.width + 'px';
         div.style.height = frame.height + 'px';
         div.dataset.index = index;
+        div.dataset.frameId = frame.id;
         div.style.zIndex = zIndex++;
 
         var header = document.createElement('div');
@@ -575,22 +1096,41 @@
 
         var sheetDiv = document.createElement('div');
         sheetDiv.className = 'spreadsheet';
-        div.appendChild(sheetDiv);
+
+        var dashboardDiv = document.createElement('div');
+        dashboardDiv.className = 'dashboard';
+
         div.appendChild(btnWrap);
+        div.appendChild(sheetDiv);
+        div.appendChild(dashboardDiv);
 
         var resizer = document.createElement('div');
         resizer.className = 'resizer';
         div.appendChild(resizer);
 
         title.addEventListener('input', function() {
-          frames[parseInt(div.dataset.index, 10)].title = title.textContent;
+          var idx = parseInt(div.dataset.index, 10);
+          frames[idx].title = title.textContent;
           saveFrames();
+          var chart = chartInstances[frames[idx].id];
+          if (chart) {
+            chart.data.datasets.forEach(function(ds) {
+              ds.label = frames[idx].title || 'Data';
+            });
+            chart.update();
+          }
         });
 
         close.addEventListener('click', function(e) {
           e.stopPropagation();
           var idx = parseInt(div.dataset.index, 10);
-          frames.splice(idx, 1);
+          var meta = frames[idx];
+          if (meta) {
+            destroyDashboard(meta.id);
+            frames.splice(idx, 1);
+          } else {
+            destroyDashboard(div.dataset.frameId);
+          }
           area.removeChild(div);
           updateFrameIndices();
           saveFrames();
@@ -614,6 +1154,7 @@
         });
 
         renderSheet(sheetDiv, parseInt(div.dataset.index, 10));
+        renderDashboard(dashboardDiv, parseInt(div.dataset.index, 10));
 
         area.appendChild(div);
 
@@ -790,7 +1331,10 @@
 
       function updateFrameIndices() {
         var children = document.querySelectorAll('.viewing-area .frame');
-        children.forEach(function(c, i) { c.dataset.index = i; });
+        children.forEach(function(c, i) {
+          c.dataset.index = i;
+          if (frames[i]) c.dataset.frameId = frames[i].id;
+        });
       }
 
       function enableDrag(el) {
@@ -802,7 +1346,8 @@
             e.target.classList.contains('resizer') ||
             e.target.classList.contains('frame-title') ||
             e.target.closest('.spreadsheet') ||
-            e.target.classList.contains('sheet-btn')
+            e.target.classList.contains('sheet-btn') ||
+            e.target.closest('.dashboard')
           )
             return;
           e.preventDefault();
