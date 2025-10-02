@@ -300,6 +300,29 @@
         color: #333;
       }
 
+      .dashboard-header-left {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .dashboard-header button {
+        font-size: 11px;
+        padding: 4px 8px;
+        border: 1px solid #c7c7c7;
+        background: #fff;
+        color: #333;
+        cursor: pointer;
+        text-transform: none;
+        font-weight: 600;
+        letter-spacing: normal;
+      }
+
+      .dashboard-header button:hover {
+        background: #f2f2f2;
+      }
+
+
       .dashboard-header select {
         font-size: 12px;
         padding: 3px 6px;
@@ -362,6 +385,22 @@
         width: 100% !important;
         height: 100% !important;
       }
+
+
+      .dashboard-hidden {
+        flex: 0 0 auto;
+      }
+
+      .dashboard-hidden .dashboard-header {
+        margin-bottom: 4px;
+      }
+
+      .dashboard-hidden-message {
+        font-size: 12px;
+        color: #777;
+        font-style: italic;
+      }
+
 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -528,7 +567,14 @@
       }
 
       function createDefaultDashboard() {
-        return { chartType: 'line', labelColumn: 0, valueColumn: 1 };
+        return {
+          chartType: 'line',
+          labelColumn: 0,
+          valueColumn: 1,
+          visible: true,
+          sheetSize: 'balanced'
+        };
+
       }
 
       function ensureFrameMetadata(frame) {
@@ -555,11 +601,46 @@
           frame.dashboard.valueColumn = 1;
           updated = true;
         }
+
+        if (typeof frame.dashboard.visible !== 'boolean') {
+          frame.dashboard.visible = true;
+          updated = true;
+        }
+        var allowedSizes = ['compact', 'balanced', 'expanded'];
+        if (allowedSizes.indexOf(frame.dashboard.sheetSize) === -1) {
+          frame.dashboard.sheetSize = 'balanced';
+          updated = true;
+        }
+
         if (frame.dashboard.hasOwnProperty('data')) {
           delete frame.dashboard.data;
           updated = true;
         }
         return updated;
+      }
+
+      function applyFrameLayout(frameElement, frame) {
+        if (!frameElement || !frame) return;
+        var sheetEl = frameElement.querySelector('.spreadsheet');
+        var dashEl = frameElement.querySelector('.dashboard');
+        if (!sheetEl || !dashEl) return;
+        var dashboard = frame.dashboard || {};
+        var size = dashboard.sheetSize || 'balanced';
+        var sizes = {
+          compact: { sheet: '0.8 1 35%', dashboard: '1 1 55%' },
+          balanced: { sheet: '1 1 50%', dashboard: '1 1 45%' },
+          expanded: { sheet: '1.4 1 65%', dashboard: '1 1 35%' }
+        };
+        var selected = sizes[size] || sizes.balanced;
+        if (dashboard.visible === false) {
+          sheetEl.style.display = '';
+          sheetEl.style.flex = '1 1 100%';
+          dashEl.style.flex = '0 0 auto';
+          return;
+        }
+        sheetEl.style.display = '';
+        sheetEl.style.flex = selected.sheet;
+        dashEl.style.flex = selected.dashboard;
       }
 
       function formatDateLabel(dateStr) {
@@ -803,29 +884,60 @@
 
         var header = document.createElement('div');
         header.className = 'dashboard-header';
+        var headerLeft = document.createElement('div');
+        headerLeft.className = 'dashboard-header-left';
         var title = document.createElement('span');
         title.textContent = 'Dashboard';
-        header.appendChild(title);
+        headerLeft.appendChild(title);
 
-        var typeLabel = document.createElement('label');
-        typeLabel.textContent = 'Chart';
-        var select = document.createElement('select');
-        select.innerHTML = '';
-        ['line', 'bar', 'pie'].forEach(function(option) {
-          var opt = document.createElement('option');
-          opt.value = option;
-          opt.textContent = option.charAt(0).toUpperCase() + option.slice(1);
-          select.appendChild(opt);
-        });
-        select.value = dashboard.chartType || 'line';
-        select.addEventListener('change', function() {
-          dashboard.chartType = select.value;
-          saveFrames();
+        var toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.textContent = dashboard.visible === false ? 'Show Dashboard' : 'Hide Dashboard';
+        toggleBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          dashboard.visible = !dashboard.visible;
+          if (dashboard.visible === false) {
+            destroyDashboard(frame.id);
+          }
+          applyFrameLayout(container.closest('.frame'), frame);
+          if (framesLoaded) saveFrames();
           renderDashboard(container, index);
         });
-        typeLabel.appendChild(select);
-        header.appendChild(typeLabel);
+        headerLeft.appendChild(toggleBtn);
+        header.appendChild(headerLeft);
+
+        container.classList.toggle('dashboard-hidden', dashboard.visible === false);
+
+        if (dashboard.visible !== false) {
+          var typeLabel = document.createElement('label');
+          typeLabel.textContent = 'Chart';
+          var select = document.createElement('select');
+          select.innerHTML = '';
+          ['line', 'bar', 'pie'].forEach(function(option) {
+            var opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option.charAt(0).toUpperCase() + option.slice(1);
+            select.appendChild(opt);
+          });
+          select.value = dashboard.chartType || 'line';
+          select.addEventListener('change', function() {
+            dashboard.chartType = select.value;
+            saveFrames();
+            renderDashboard(container, index);
+          });
+          typeLabel.appendChild(select);
+          header.appendChild(typeLabel);
+        }
         container.appendChild(header);
+
+        if (dashboard.visible === false) {
+          var hiddenMessage = document.createElement('div');
+          hiddenMessage.className = 'dashboard-hidden-message';
+          hiddenMessage.textContent = 'Dashboard hidden. Use "Show Dashboard" to display charts for this frame.';
+          container.appendChild(hiddenMessage);
+          applyFrameLayout(container.closest('.frame'), frame);
+          return;
+        }
 
         var sheet = frame.sheet;
         var boundsChanged = ensureDashboardColumnBounds(frame);
@@ -833,6 +945,27 @@
 
         var form = document.createElement('div');
         form.className = 'dashboard-form';
+
+        var sizeField = document.createElement('label');
+        sizeField.textContent = 'Sheet size';
+        var sizeSelect = document.createElement('select');
+        [
+          { value: 'compact', label: 'Compact' },
+          { value: 'balanced', label: 'Balanced' },
+          { value: 'expanded', label: 'Expanded' }
+        ].forEach(function(option) {
+          var opt = document.createElement('option');
+          opt.value = option.value;
+          opt.textContent = option.label;
+          sizeSelect.appendChild(opt);
+        });
+        sizeSelect.value = dashboard.sheetSize || 'balanced';
+        sizeSelect.addEventListener('change', function() {
+          dashboard.sheetSize = sizeSelect.value;
+          applyFrameLayout(container.closest('.frame'), frame);
+          if (framesLoaded) saveFrames();
+        });
+        sizeField.appendChild(sizeSelect);
 
         var labelField = document.createElement('label');
         labelField.textContent = 'Label column';
@@ -872,6 +1005,8 @@
         });
         valueField.appendChild(valueSelect);
 
+
+        form.appendChild(sizeField);
         form.appendChild(labelField);
         form.appendChild(valueField);
         container.appendChild(form);
@@ -890,6 +1025,7 @@
           var table = document.createElement('table');
           var thead = document.createElement('thead');
           var headRow = document.createElement('tr');
+          ['Label', 'Value'].forEach(function(text) {
 
             var th = document.createElement('th');
             th.textContent = text;
@@ -898,9 +1034,7 @@
           thead.appendChild(headRow);
           table.appendChild(thead);
           var tbody = document.createElement('tbody');
-
           entries.forEach(function(entry, idx) {
-
             var row = document.createElement('tr');
             var labelCell = document.createElement('td');
             labelCell.textContent = getEntrySummary(entry, idx);
@@ -921,16 +1055,15 @@
         var canvas = document.createElement('canvas');
         chartContainer.appendChild(canvas);
         container.appendChild(chartContainer);
-
-
         if (entries.length === 0) {
           canvas.style.display = 'none';
           destroyDashboard(frame.id);
         } else {
           canvas.style.display = 'block';
           updateDashboardChart(frame, entries, canvas);
-
         }
+
+        applyFrameLayout(container.closest('.frame'), frame);
       }
 
       function incrementLoad() {
