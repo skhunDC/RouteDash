@@ -669,6 +669,99 @@
         return raw == null ? '' : String(raw).trim();
       }
 
+      function guessDashboardColumns(frame) {
+        var result = { label: 0, value: 0 };
+        if (!frame || !frame.sheet) return result;
+        var sheet = frame.sheet;
+        if (typeof sheet.cols !== 'number' || sheet.cols <= 0) return result;
+        if (!sheet.computed || sheet.computed.length !== sheet.rows) {
+          evaluateSheet(sheet);
+        }
+        var cols = sheet.cols;
+        var rows = sheet.rows || 0;
+        var numericCounts = new Array(cols).fill(0);
+        var textCounts = new Array(cols).fill(0);
+        for (var r = 1; r < rows; r++) {
+          var computedRow = sheet.computed[r] || [];
+          var rawRow = sheet.data[r] || [];
+          for (var c = 0; c < cols; c++) {
+            var value = computedRow[c];
+            if (value == null || value === '') value = rawRow[c];
+            if (value == null || value === '') continue;
+            if (typeof value === 'string') {
+              value = value.trim();
+              if (value === '') continue;
+            }
+            var numeric = typeof value === 'number' ? value : parseFloat(value);
+            if (!isNaN(numeric) && isFinite(numeric)) {
+              numericCounts[c]++;
+            } else {
+              textCounts[c]++;
+            }
+          }
+        }
+
+        var bestLabel = 0;
+        var bestLabelScore = -Infinity;
+        for (var i = 0; i < cols; i++) {
+          var header = getColumnHeader(sheet, i);
+          var headerScore = 0;
+          if (header) {
+            var normalized = header.toLowerCase();
+            headerScore = 2;
+            if (/label|name|route|driver|date|day/.test(normalized)) {
+              headerScore += 1;
+            }
+          }
+          var score = headerScore + textCounts[i] - numericCounts[i];
+          if (score > bestLabelScore) {
+            bestLabelScore = score;
+            bestLabel = i;
+          }
+        }
+
+        var bestValue = bestLabel;
+        var bestValueScore = -Infinity;
+        for (var j = 0; j < cols; j++) {
+          var valueHeader = getColumnHeader(sheet, j);
+          var valueHeaderScore = 0;
+          if (valueHeader) {
+            var vh = valueHeader.toLowerCase();
+            if (/value|amount|total|score|count|number|qty|miles|revenue/.test(vh)) {
+              valueHeaderScore = 3;
+            } else {
+              valueHeaderScore = 1;
+            }
+          }
+          var numericScore = numericCounts[j] * 2;
+          var scoreValue = numericScore + valueHeaderScore;
+          if (cols > 1 && j === bestLabel) {
+            scoreValue -= 1;
+          }
+          if (scoreValue > bestValueScore) {
+            bestValueScore = scoreValue;
+            bestValue = j;
+          }
+        }
+
+        if (cols > 1 && bestValue === bestLabel) {
+          var fallback = bestLabel === 0 ? 1 : 0;
+          var fallbackScore = -Infinity;
+          for (var k = 0; k < cols; k++) {
+            if (k === bestLabel) continue;
+            if (numericCounts[k] > fallbackScore) {
+              fallbackScore = numericCounts[k];
+              fallback = k;
+            }
+          }
+          bestValue = fallback;
+        }
+
+        result.label = bestLabel;
+        result.value = bestValue;
+        return result;
+      }
+
       function ensureDashboardColumnBounds(frame) {
         if (!frame || !frame.sheet || typeof frame.sheet.cols !== 'number') return false;
         var dashboard = frame.dashboard || {};
@@ -691,6 +784,17 @@
         if (value > maxIndex) {
           value = maxIndex;
           updated = true;
+        }
+        if (frame.sheet.cols > 1 && label === value) {
+          var guess = guessDashboardColumns(frame);
+          if (guess.label !== label) {
+            label = guess.label;
+            updated = true;
+          }
+          if (guess.value !== value) {
+            value = guess.value;
+            updated = true;
+          }
         }
         if (dashboard.labelColumn !== label) {
           dashboard.labelColumn = label;
@@ -967,48 +1071,7 @@
         });
         sizeField.appendChild(sizeSelect);
 
-        var labelField = document.createElement('label');
-        labelField.textContent = 'Label column';
-        var labelSelect = document.createElement('select');
-        for (var c = 0; sheet && c < sheet.cols; c++) {
-          var labelOption = document.createElement('option');
-          labelOption.value = c;
-          var headerText = getColumnHeader(sheet, c);
-          var prefix = columnNameFromIndex(c);
-          labelOption.textContent = headerText ? prefix + ' — ' + headerText : prefix;
-          labelSelect.appendChild(labelOption);
-        }
-        labelSelect.value = frame.dashboard.labelColumn;
-        labelSelect.addEventListener('change', function() {
-          frame.dashboard.labelColumn = parseInt(labelSelect.value, 10);
-          if (framesLoaded) saveFrames();
-          renderDashboard(container, index);
-        });
-        labelField.appendChild(labelSelect);
-
-        var valueField = document.createElement('label');
-        valueField.textContent = 'Value column';
-        var valueSelect = document.createElement('select');
-        for (var vc = 0; sheet && vc < sheet.cols; vc++) {
-          var valueOption = document.createElement('option');
-          valueOption.value = vc;
-          var headerValue = getColumnHeader(sheet, vc);
-          var valuePrefix = columnNameFromIndex(vc);
-          valueOption.textContent = headerValue ? valuePrefix + ' — ' + headerValue : valuePrefix;
-          valueSelect.appendChild(valueOption);
-        }
-        valueSelect.value = frame.dashboard.valueColumn;
-        valueSelect.addEventListener('change', function() {
-          frame.dashboard.valueColumn = parseInt(valueSelect.value, 10);
-          if (framesLoaded) saveFrames();
-          renderDashboard(container, index);
-        });
-        valueField.appendChild(valueSelect);
-
-
         form.appendChild(sizeField);
-        form.appendChild(labelField);
-        form.appendChild(valueField);
         container.appendChild(form);
 
         var dataWrapper = document.createElement('div');
@@ -1023,16 +1086,6 @@
           dataWrapper.appendChild(empty);
         } else {
           var table = document.createElement('table');
-          var thead = document.createElement('thead');
-          var headRow = document.createElement('tr');
-          ['Label', 'Value'].forEach(function(text) {
-
-            var th = document.createElement('th');
-            th.textContent = text;
-            headRow.appendChild(th);
-          });
-          thead.appendChild(headRow);
-          table.appendChild(thead);
           var tbody = document.createElement('tbody');
           entries.forEach(function(entry, idx) {
             var row = document.createElement('tr');
