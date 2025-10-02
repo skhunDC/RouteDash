@@ -546,6 +546,7 @@
           frame.dashboard.chartType = 'line';
           updated = true;
         }
+
         if (typeof frame.dashboard.labelColumn !== 'number' || isNaN(frame.dashboard.labelColumn)) {
           frame.dashboard.labelColumn = 0;
           updated = true;
@@ -883,12 +884,13 @@
           var empty = document.createElement('div');
           empty.className = 'dashboard-empty';
           empty.textContent = 'Enter labels and numbers in the selected sheet columns to populate this chart automatically.';
+
           dataWrapper.appendChild(empty);
         } else {
           var table = document.createElement('table');
           var thead = document.createElement('thead');
           var headRow = document.createElement('tr');
-          ['Label', 'Value'].forEach(function(text) {
+
             var th = document.createElement('th');
             th.textContent = text;
             headRow.appendChild(th);
@@ -896,7 +898,9 @@
           thead.appendChild(headRow);
           table.appendChild(thead);
           var tbody = document.createElement('tbody');
+
           entries.forEach(function(entry, idx) {
+
             var row = document.createElement('tr');
             var labelCell = document.createElement('td');
             labelCell.textContent = getEntrySummary(entry, idx);
@@ -918,12 +922,14 @@
         chartContainer.appendChild(canvas);
         container.appendChild(chartContainer);
 
+
         if (entries.length === 0) {
           canvas.style.display = 'none';
           destroyDashboard(frame.id);
         } else {
           canvas.style.display = 'block';
           updateDashboardChart(frame, entries, canvas);
+
         }
       }
 
