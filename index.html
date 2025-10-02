@@ -322,6 +322,7 @@
         background: #f2f2f2;
       }
 
+
       .dashboard-header select {
         font-size: 12px;
         padding: 3px 6px;
@@ -385,6 +386,7 @@
         height: 100% !important;
       }
 
+
       .dashboard-hidden {
         flex: 0 0 auto;
       }
@@ -398,6 +400,7 @@
         color: #777;
         font-style: italic;
       }
+
 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -571,6 +574,7 @@
           visible: true,
           sheetSize: 'balanced'
         };
+
       }
 
       function ensureFrameMetadata(frame) {
@@ -588,6 +592,7 @@
           frame.dashboard.chartType = 'line';
           updated = true;
         }
+
         if (typeof frame.dashboard.labelColumn !== 'number' || isNaN(frame.dashboard.labelColumn)) {
           frame.dashboard.labelColumn = 0;
           updated = true;
@@ -596,6 +601,7 @@
           frame.dashboard.valueColumn = 1;
           updated = true;
         }
+
         if (typeof frame.dashboard.visible !== 'boolean') {
           frame.dashboard.visible = true;
           updated = true;
@@ -605,6 +611,7 @@
           frame.dashboard.sheetSize = 'balanced';
           updated = true;
         }
+
         if (frame.dashboard.hasOwnProperty('data')) {
           delete frame.dashboard.data;
           updated = true;
@@ -998,6 +1005,7 @@
         });
         valueField.appendChild(valueSelect);
 
+
         form.appendChild(sizeField);
         form.appendChild(labelField);
         form.appendChild(valueField);
@@ -1011,12 +1019,14 @@
           var empty = document.createElement('div');
           empty.className = 'dashboard-empty';
           empty.textContent = 'Enter labels and numbers in the selected sheet columns to populate this chart automatically.';
+
           dataWrapper.appendChild(empty);
         } else {
           var table = document.createElement('table');
           var thead = document.createElement('thead');
           var headRow = document.createElement('tr');
           ['Label', 'Value'].forEach(function(text) {
+
             var th = document.createElement('th');
             th.textContent = text;
             headRow.appendChild(th);
@@ -1045,7 +1055,6 @@
         var canvas = document.createElement('canvas');
         chartContainer.appendChild(canvas);
         container.appendChild(chartContainer);
-
         if (entries.length === 0) {
           canvas.style.display = 'none';
           destroyDashboard(frame.id);
