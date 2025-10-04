@@ -2197,10 +2197,12 @@
       function startCarousel() {
         var track = document.getElementById('carousel-track');
         if (!track) return;
-        track.innerHTML = '';
-        track.style.removeProperty('animation');
-        track.style.removeProperty('--carousel-speed');
-        if (driverImages.length === 0) return;
+
+        if (driverImages.length === 0) {
+          track.replaceChildren();
+          track.style.removeProperty('--carousel-speed');
+          return;
+        }
 
         var carousel = document.getElementById('driver-carousel');
         var imgWidth = 140;
@@ -2208,6 +2210,10 @@
         var rows = 2;
         var width = carousel ? carousel.offsetWidth : 600;
         var visiblePerRow = Math.max(3, Math.ceil(width / (imgWidth + gap)) + 2);
+
+        var newTrack = document.createElement('div');
+        newTrack.className = track.className;
+        newTrack.id = track.id;
 
         function shuffle(list) {
           var copy = list.slice();
@@ -2270,12 +2276,14 @@
             img.src = src;
             row.appendChild(img);
           });
-          track.appendChild(row);
+          newTrack.appendChild(row);
         }
 
         var duration = Math.max(10, (totalImagesPerRow * 5) / 1.5);
         duration = duration / 2;
-        track.style.setProperty('--carousel-speed', duration.toFixed(2) + 's');
+        newTrack.style.setProperty('--carousel-speed', duration.toFixed(2) + 's');
+
+        track.parentNode.replaceChild(newTrack, track);
       }
 
     </script>
