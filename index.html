@@ -51,10 +51,10 @@
         z-index: 1500;
         display: flex;
         flex-wrap: wrap;
-        gap: 24px;
+        gap: 20px;
         align-items: center;
-        justify-content: space-between;
-        padding: 28px;
+        justify-content: flex-start;
+        padding: 20px 24px;
         border-radius: var(--radius-lg);
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(var(--brand-secondary-rgb), 0.14));
         border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
@@ -84,13 +84,23 @@
         z-index: 0;
       }
 
+      .header-info {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
       .logo {
         position: relative;
         z-index: 2;
       }
 
       .logo img {
-        height: 86px;
+        height: 64px;
         width: auto;
         display: block;
       }
@@ -100,10 +110,9 @@
         z-index: 2;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        flex: 0 1 340px;
-        min-width: 240px;
-        max-width: 420px;
+        gap: 6px;
+        flex: 1 1 auto;
+        min-width: 0;
       }
 
       #header-title {
@@ -112,6 +121,9 @@
         font-weight: 700;
         color: var(--brand-dark);
         letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       #header-title:focus {
@@ -120,17 +132,18 @@
       }
 
       .datetime {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
+        display: inline-flex;
+        flex-wrap: nowrap;
+        gap: 8px;
         align-items: center;
         font-size: 0.95rem;
         color: var(--text-secondary);
         font-weight: 500;
+        white-space: nowrap;
       }
 
       .weather .datetime {
-        flex: 1 1 auto;
+        flex: 0 1 auto;
         gap: 10px;
         color: rgba(15, 23, 42, 0.72);
         font-weight: 600;
@@ -142,9 +155,9 @@
       }
 
       .weather {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-start;
         gap: 16px;
         padding: 10px 18px;
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(var(--brand-secondary-rgb), 0.2));
@@ -152,7 +165,9 @@
         border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
         color: var(--brand-dark);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 12px 22px -18px rgba(var(--brand-primary-rgb), 0.5);
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        min-width: 0;
       }
 
       .weather-current {
@@ -160,10 +175,13 @@
         align-items: center;
         gap: 8px;
         font-weight: 600;
+        white-space: nowrap;
+        min-width: 0;
       }
 
       .weather span {
         line-height: 1.2;
+        white-space: nowrap;
       }
 
       #weather-icon {
@@ -178,6 +196,14 @@
         justify-content: flex-end;
         gap: 12px;
         flex-wrap: wrap;
+        margin-left: auto;
+      }
+
+      #weather-condition {
+        display: inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 220px;
       }
 
       .add-frame-btn,
@@ -888,21 +914,40 @@
         }
 
         .header {
-          padding: 20px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 18px;
+        }
+
+        .header-info {
+          width: 100%;
+          align-items: flex-start;
+          gap: 16px;
         }
 
         .weather {
           width: 100%;
-          justify-content: center;
+          justify-content: flex-start;
           gap: 12px;
+          flex-wrap: wrap;
+          white-space: normal;
         }
 
         .weather .datetime {
-          justify-content: center;
+          justify-content: flex-start;
+        }
+
+        .datetime,
+        .weather span,
+        #header-title {
+          white-space: normal;
         }
 
         .header-controls {
+          width: 100%;
           justify-content: flex-start;
+          margin-left: 0;
         }
 
         .workspace {
@@ -2334,17 +2379,19 @@
     </div>
     <div class="app-shell">
       <header class="header">
-        <div class="logo">
-          <img src="https://www.dublincleaners.com/wp-content/uploads/2025/06/LogosHQ.png" alt="Logo">
-        </div>
-        <div class="header-title">
-          <h1 id="header-title" contenteditable="true">Route Operations Dashboard</h1>
-          <div id="weather" class="weather">
-            <div id="datetime" class="datetime"></div>
-            <div class="weather-current" aria-live="polite">
-              <span id="weather-icon"></span>
-              <span id="weather-temp"></span>
-              <span id="weather-condition"></span>
+        <div class="header-info">
+          <div class="logo">
+            <img src="https://www.dublincleaners.com/wp-content/uploads/2025/06/LogosHQ.png" alt="Logo">
+          </div>
+          <div class="header-title">
+            <h1 id="header-title" contenteditable="true">Route Operations Dashboard</h1>
+            <div id="weather" class="weather">
+              <div id="datetime" class="datetime"></div>
+              <div class="weather-current" aria-live="polite">
+                <span id="weather-icon"></span>
+                <span id="weather-temp"></span>
+                <span id="weather-condition"></span>
+              </div>
             </div>
           </div>
         </div>
