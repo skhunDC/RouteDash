@@ -427,7 +427,7 @@
         display: flex;
         flex-direction: column;
         gap: 18px;
-        --carousel-speed: 30s;
+        --carousel-speed: 15s;
       }
 
       .carousel-row {
@@ -2209,29 +2209,72 @@
         var width = carousel ? carousel.offsetWidth : 600;
         var visiblePerRow = Math.max(3, Math.ceil(width / (imgWidth + gap)) + 2);
 
-        function buildRow(startIndex) {
-          var sequence = [];
-          for (var i = 0; sequence.length < visiblePerRow; i++) {
-            sequence.push(driverImages[(startIndex + i) % driverImages.length]);
+        function shuffle(list) {
+          var copy = list.slice();
+          for (var i = copy.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = copy[i];
+            copy[i] = copy[j];
+            copy[j] = temp;
           }
-          return sequence.concat(sequence);
+          return copy;
         }
 
-        var secondOffset = driverImages.length > 1 ? Math.ceil(driverImages.length / rows) : 0;
-        var offsets = [0, secondOffset];
+        function buildRandomRow(previousBase) {
+          var baseSequence = [];
+          var pool = shuffle(driverImages);
+
+          while (baseSequence.length < visiblePerRow) {
+            if (!pool.length) {
+              pool = shuffle(driverImages);
+            }
+            baseSequence.push(pool.shift());
+          }
+
+          baseSequence = baseSequence.slice(0, visiblePerRow);
+
+          if (driverImages.length > 1) {
+            var attempts = 0;
+            while (
+              previousBase &&
+                baseSequence.every(function(src, index) {
+                  return src === previousBase[index];
+                }) &&
+              attempts < 5
+            ) {
+              baseSequence = shuffle(baseSequence);
+              attempts++;
+            }
+
+            if (
+              baseSequence.every(function(src, index) {
+                return src === driverImages[index % driverImages.length];
+              })
+            ) {
+              baseSequence = shuffle(baseSequence);
+            }
+          }
+
+          return baseSequence.concat(baseSequence);
+        }
+
         var totalImagesPerRow = visiblePerRow * 2;
-        offsets.forEach(function(offset) {
+        var previousBase = null;
+        for (var rowIndex = 0; rowIndex < rows; rowIndex++) {
           var row = document.createElement('div');
           row.className = 'carousel-row';
-          buildRow(offset).forEach(function(src) {
+          var rowSequence = buildRandomRow(previousBase);
+          previousBase = rowSequence.slice(0, visiblePerRow);
+          rowSequence.forEach(function(src) {
             var img = document.createElement('img');
             img.src = src;
             row.appendChild(img);
           });
           track.appendChild(row);
-        });
+        }
 
         var duration = Math.max(10, (totalImagesPerRow * 5) / 1.5);
+        duration = duration / 2;
         track.style.setProperty('--carousel-speed', duration.toFixed(2) + 's');
       }
 
