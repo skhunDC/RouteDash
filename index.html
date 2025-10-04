@@ -1088,7 +1088,7 @@
               if (--remaining === 0) {
                 google.script.run
                   .withSuccessHandler(function(list) {
-                    driverImages = list || data;
+                    setDriverImages(list || data);
                     startCarousel();
                     input.value = '';
                   })
@@ -1112,7 +1112,7 @@
         google.script.run
           .withSuccessHandler(function(list) {
             preloadImages(list || [], function(images) {
-              driverImages = images;
+              setDriverImages(images);
               startCarousel();
               decrementLoad();
             });
@@ -2287,17 +2287,37 @@
 
       window.addEventListener('resize', keepFramesInView);
 
+      function shuffle(list) {
+        var copy = list.slice();
+        for (var i = copy.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var temp = copy[i];
+          copy[i] = copy[j];
+          copy[j] = temp;
+        }
+        return copy;
+      }
+
+      function setDriverImages(list, options) {
+        var images = Array.isArray(list) ? list.slice() : [];
+        var shouldShuffle = !options || options.shuffle !== false;
+        if (shouldShuffle && images.length > 1) {
+          images = shuffle(images);
+        }
+        driverImages = images;
+      }
+
       function preloadImages(list, cb) {
         if (!list.length) {
           cb([]);
           return;
         }
         var remaining = list.length;
-        var results = [];
-        list.forEach(function(src) {
+        var results = new Array(list.length);
+        list.forEach(function(src, index) {
           var img = new Image();
           img.onload = img.onerror = function() {
-            results.push(src);
+            results[index] = src;
             if (--remaining === 0) cb(results);
           };
           img.src = src;
@@ -2334,61 +2354,28 @@
           );
         }
 
-        function shuffle(list) {
-          var copy = list.slice();
-          for (var i = copy.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var temp = copy[i];
-            copy[i] = copy[j];
-            copy[j] = temp;
-          }
-          return copy;
-        }
+        var sequence = driverImages.slice();
+        var rowOffset = sequence.length ? Math.max(1, Math.ceil(sequence.length / config.rows)) : 0;
+        var startIndex = 0;
 
-        function buildRandomRow(previousBase) {
+        function buildRowSequence(offset) {
+          if (!sequence.length) {
+            return [];
+          }
+
           var baseSequence = [];
-          var pool = shuffle(driverImages);
-
-          while (baseSequence.length < config.visiblePerRow) {
-            if (!pool.length) {
-              pool = shuffle(driverImages);
-            }
-            baseSequence.push(pool.shift());
-          }
-
-          baseSequence = baseSequence.slice(0, config.visiblePerRow);
-
-          if (driverImages.length > 1) {
-            var attempts = 0;
-            while (
-              previousBase &&
-                baseSequence.every(function(src, index) {
-                  return src === previousBase[index];
-                }) &&
-              attempts < 5
-            ) {
-              baseSequence = shuffle(baseSequence);
-              attempts++;
-            }
-
-            if (
-              baseSequence.every(function(src, index) {
-                return src === driverImages[index % driverImages.length];
-              })
-            ) {
-              baseSequence = shuffle(baseSequence);
-            }
+          for (var i = 0; i < config.visiblePerRow; i++) {
+            var nextIndex = (offset + i) % sequence.length;
+            baseSequence.push(sequence[nextIndex]);
           }
 
           return baseSequence.concat(baseSequence);
         }
 
-        var previousBase = null;
         for (var rowIndex = 0; rowIndex < config.rows; rowIndex++) {
           var row = document.createElement('div');
           row.className = 'carousel-row';
-          var rowSequence = buildRandomRow(previousBase);
-          previousBase = rowSequence.slice(0, config.visiblePerRow);
+          var rowSequence = buildRowSequence(startIndex);
           rowSequence.forEach(function(src) {
             var img = document.createElement('img');
             img.src = src;
@@ -2396,6 +2383,10 @@
             row.appendChild(img);
           });
           track.appendChild(row);
+
+          if (sequence.length) {
+            startIndex = (startIndex + rowOffset) % sequence.length;
+          }
         }
 
         track.style.setProperty('--carousel-speed', config.duration.toFixed(2) + 's');
