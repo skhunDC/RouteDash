@@ -10,16 +10,19 @@
     >
         <style>
       :root {
-        --brand-primary: #c62828;
-        --brand-secondary: #ef5350;
-        --brand-dark: #1f2937;
+        --brand-primary: #2563eb;
+        --brand-primary-rgb: 37, 99, 235;
+        --brand-secondary: #0ea5e9;
+        --brand-secondary-rgb: 14, 165, 233;
+        --brand-accent: #22c55e;
+        --brand-dark: #0f172a;
         --surface: #ffffff;
-        --surface-muted: #f4f6fb;
-        --text-primary: #1f2937;
-        --text-secondary: #4b5563;
-        --border-soft: #e5e7eb;
-        --shadow-soft: 0 24px 45px rgba(15, 23, 42, 0.15);
-        --radius-lg: 22px;
+        --surface-muted: #f8fafc;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --border-soft: #e2e8f0;
+        --shadow-soft: 0 24px 45px rgba(15, 23, 42, 0.12);
+        --radius-lg: 20px;
       }
 
       * {
@@ -29,7 +32,7 @@
       body {
         margin: 0;
         font-family: 'Inter', 'Segoe UI', sans-serif;
-        background: radial-gradient(circle at top left, #fde4e4 0%, #f4f7fb 45%, #eef2f6 100%);
+        background: radial-gradient(circle at top left, #eff6ff 0%, #f8fafc 45%, #f1f5f9 100%);
         color: var(--text-primary);
       }
 
@@ -60,7 +63,7 @@
         content: '';
         position: absolute;
         inset: -60px -120px 50% 60%;
-        background: radial-gradient(circle, rgba(198, 40, 40, 0.16) 0%, rgba(198, 40, 40, 0) 70%);
+        background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.18) 0%, rgba(var(--brand-primary-rgb), 0) 70%);
         transform: rotate(-12deg);
         pointer-events: none;
       }
@@ -95,7 +98,7 @@
       }
 
       #header-title:focus {
-        outline: 2px solid rgba(198, 40, 40, 0.3);
+        outline: 2px solid rgba(var(--brand-primary-rgb), 0.35);
         border-radius: 6px;
       }
 
@@ -150,14 +153,14 @@
       }
 
       #add-frame {
-        background: var(--brand-primary);
+        background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
         color: #ffffff;
-        box-shadow: 0 12px 22px rgba(198, 40, 40, 0.25);
+        box-shadow: 0 12px 22px rgba(var(--brand-primary-rgb), 0.25);
       }
 
       #add-frame:hover {
         transform: translateY(-2px);
-        box-shadow: 0 16px 32px rgba(198, 40, 40, 0.28);
+        box-shadow: 0 16px 32px rgba(var(--brand-primary-rgb), 0.28);
       }
 
       .lock-btn {
@@ -170,13 +173,13 @@
       }
 
       #upload-toggle {
-        background: rgba(198, 40, 40, 0.12);
+        background: rgba(var(--brand-primary-rgb), 0.12);
         color: var(--brand-primary);
         box-shadow: none;
       }
 
       #upload-toggle:hover {
-        background: rgba(198, 40, 40, 0.2);
+        background: rgba(var(--brand-primary-rgb), 0.2);
         transform: translateY(-1px);
       }
 
@@ -213,7 +216,7 @@
       }
 
       .upload-option:hover {
-        background: rgba(198, 40, 40, 0.08);
+        background: rgba(var(--brand-primary-rgb), 0.08);
       }
 
       .main-layout {
@@ -258,7 +261,7 @@
         min-height: 560px;
         border-radius: 20px;
         border: 1px solid var(--border-soft);
-        background: linear-gradient(135deg, rgba(198, 40, 40, 0.06), rgba(198, 40, 40, 0)) var(--surface-muted);
+        background: linear-gradient(135deg, rgba(var(--brand-secondary-rgb), 0.08), rgba(var(--brand-secondary-rgb), 0)) var(--surface-muted);
         overflow: hidden;
       }
 
@@ -266,10 +269,10 @@
         content: '';
         position: absolute;
         inset: 0;
-        background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0) 23px, rgba(198, 40, 40, 0.05) 24px),
-          linear-gradient(180deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0) 23px, rgba(198, 40, 40, 0.05) 24px);
+        background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0) 23px, rgba(var(--brand-primary-rgb), 0.05) 24px),
+          linear-gradient(180deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0) 23px, rgba(var(--brand-primary-rgb), 0.05) 24px);
         background-size: 24px 24px;
-        opacity: 0.5;
+        opacity: 0.4;
         pointer-events: none;
       }
 
@@ -321,16 +324,16 @@
         width: 100%;
         padding: 14px 16px;
         border-radius: 14px;
-        border: 1px solid rgba(198, 40, 40, 0.25);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.25);
         font-size: 1.4rem;
         text-align: center;
         font-weight: 600;
         color: var(--brand-dark);
-        background: rgba(198, 40, 40, 0.05);
+        background: rgba(var(--brand-primary-rgb), 0.06);
       }
 
       .driver-week input:focus {
-        outline: 3px solid rgba(198, 40, 40, 0.18);
+        outline: 3px solid rgba(var(--brand-primary-rgb), 0.18);
       }
 
       .quote-card {
@@ -385,16 +388,70 @@
       #loading-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.8);
-        display: flex;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(6px);
+        display: none;
         align-items: center;
         justify-content: center;
         z-index: 2000;
+        padding: 24px;
       }
 
-      #loading-canvas {
-        width: min(480px, 90vw);
-        height: 120px;
+      .loading-card {
+        background: var(--surface);
+        border-radius: 22px;
+        box-shadow: var(--shadow-soft);
+        padding: 28px 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        max-width: 320px;
+        width: 100%;
+      }
+
+      .loading-spinner {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        border: 4px solid rgba(var(--brand-primary-rgb), 0.15);
+        border-top-color: var(--brand-primary);
+        border-right-color: var(--brand-secondary);
+        animation: spin 1s linear infinite;
+      }
+
+      .loading-text {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        color: var(--text-secondary);
+      }
+
+      .loading-text strong {
+        color: var(--text-primary);
+        font-size: 1.05rem;
+      }
+
+      .loading-progress {
+        width: 100%;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(var(--brand-primary-rgb), 0.12);
+        overflow: hidden;
+      }
+
+      #loading-progress-bar {
+        width: 18%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+        transition: width 0.2s ease;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       .frame {
@@ -417,6 +474,7 @@
         color: #ffffff;
         padding: 14px 18px;
         user-select: none;
+        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
       }
 
       .frame-title {
@@ -452,7 +510,7 @@
       .frame .resizer {
         width: 12px;
         height: 12px;
-        background: linear-gradient(135deg, rgba(198, 40, 40, 0.65), rgba(198, 40, 40, 0.85));
+        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.7), rgba(var(--brand-secondary-rgb), 0.9));
         position: absolute;
         right: 0;
         bottom: 0;
@@ -464,7 +522,7 @@
         flex-wrap: wrap;
         gap: 8px;
         padding: 12px 16px;
-        background: rgba(198, 40, 40, 0.05);
+        background: rgba(var(--brand-primary-rgb), 0.05);
         justify-content: flex-start;
       }
 
@@ -474,14 +532,14 @@
         font-weight: 600;
         border-radius: 10px;
         border: none;
-        background: rgba(198, 40, 40, 0.18);
+        background: rgba(var(--brand-primary-rgb), 0.16);
         color: var(--brand-dark);
         cursor: pointer;
         transition: background 0.2s ease;
       }
 
       .sheet-btn:hover {
-        background: rgba(198, 40, 40, 0.28);
+        background: rgba(var(--brand-primary-rgb), 0.28);
       }
 
       .spreadsheet {
@@ -508,15 +566,15 @@
 
       .spreadsheet th {
         font-weight: 600;
-        background: rgba(198, 40, 40, 0.12);
+        background: rgba(var(--brand-primary-rgb), 0.12);
         color: var(--brand-dark);
       }
 
       .dashboard {
         flex: 1 1 auto;
-        background: rgba(248, 250, 252, 0.85);
+        background: rgba(241, 245, 249, 0.9);
         padding: 14px 18px 18px;
-        border-top: 1px solid rgba(198, 40, 40, 0.18);
+        border-top: 1px solid rgba(var(--brand-primary-rgb), 0.14);
         color: var(--text-primary);
         overflow: auto;
       }
@@ -545,14 +603,14 @@
         font-size: 0.75rem;
         border-radius: 999px;
         border: none;
-        background: rgba(198, 40, 40, 0.12);
+        background: rgba(var(--brand-primary-rgb), 0.12);
         color: var(--brand-primary);
         cursor: pointer;
         transition: background 0.2s ease;
       }
 
       .dashboard-header button:hover {
-        background: rgba(198, 40, 40, 0.2);
+        background: rgba(var(--brand-primary-rgb), 0.2);
       }
 
       .dashboard-header select {
@@ -696,7 +754,7 @@
         }
       }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <script>
         function updateDateTime() {
           var now = new Date();
@@ -798,18 +856,28 @@
           });
         });
         incrementLoad();
-        google.script.run.withSuccessHandler(function(src) {
-          if (src) document.querySelector('.logo img').src = src;
-          decrementLoad();
-        }).getLogoImage();
-        incrementLoad();
-        google.script.run.withSuccessHandler(function(list) {
-          preloadImages(list || [], function(images) {
-            driverImages = images;
-            startCarousel();
+        google.script.run
+          .withSuccessHandler(function(src) {
+            if (src) document.querySelector('.logo img').src = src;
             decrementLoad();
-          });
-        }).getDriverImages();
+          })
+          .withFailureHandler(function() {
+            decrementLoad();
+          })
+          .getLogoImage();
+        incrementLoad();
+        google.script.run
+          .withSuccessHandler(function(list) {
+            preloadImages(list || [], function(images) {
+              driverImages = images;
+              startCarousel();
+              decrementLoad();
+            });
+          })
+          .withFailureHandler(function() {
+            decrementLoad();
+          })
+          .getDriverImages();
       }
 
       function initLockToggle() {
@@ -826,15 +894,29 @@
       function init() {
         updateDateTime();
         setInterval(updateDateTime, 1000);
-        updateQuote();
+        updateQuote(true);
         // refresh quote once a day
         setInterval(updateQuote, 86400000);
-        google.script.run.withSuccessHandler(updateWeather).getWeather();
         incrementLoad();
-        google.script.run.withSuccessHandler(function(data) {
-          loadFrames(data);
-          decrementLoad();
-        }).getFrames();
+        google.script.run
+          .withSuccessHandler(function(weather) {
+            updateWeather(weather);
+            decrementLoad();
+          })
+          .withFailureHandler(function() {
+            decrementLoad();
+          })
+          .getWeather();
+        incrementLoad();
+        google.script.run
+          .withSuccessHandler(function(data) {
+            loadFrames(data);
+            decrementLoad();
+          })
+          .withFailureHandler(function() {
+            decrementLoad();
+          })
+          .getFrames();
         document.getElementById('add-frame').addEventListener('click', addFrame);
         initDriver();
         initHeaderTitle();
@@ -850,7 +932,10 @@
 
       var driverImages = [];
       var pendingLoads = 0;
-      var loadingInterval = null;
+      var loadingTimer = null;
+      var loadingOverlayActive = false;
+      var loadingStart = null;
+      var maxPendingLoads = 0;
       var chartInstances = {};
       var frameIdCounter = 0;
 
@@ -1153,14 +1238,14 @@
 
       function buildColorPalette(count) {
         var base = [
-          '#b30000',
-          '#ff6f61',
-          '#ffd166',
-          '#06d6a0',
-          '#118ab2',
-          '#073b4c',
-          '#8338ec',
-          '#ef476f'
+          '#2563eb',
+          '#0ea5e9',
+          '#22c55e',
+          '#f97316',
+          '#8b5cf6',
+          '#14b8a6',
+          '#f59e0b',
+          '#64748b'
         ];
         var palette = [];
         for (var i = 0; i < count; i++) {
@@ -1208,6 +1293,8 @@
           };
         }
         var isLine = type === 'line';
+        var borderColor = '#2563eb';
+        var backgroundColor = isLine ? 'rgba(37, 99, 235, 0.18)' : '#38bdf8';
         return {
           type: type,
           data: {
@@ -1216,12 +1303,12 @@
               {
                 label: datasetLabel,
                 data: values,
-                borderColor: '#b30000',
-                backgroundColor: isLine ? 'rgba(179, 0, 0, 0.18)' : '#ff6f61',
+                borderColor: borderColor,
+                backgroundColor: backgroundColor,
                 tension: isLine ? 0.35 : 0,
                 fill: isLine,
                 pointRadius: isLine ? 3 : 0,
-                pointBackgroundColor: '#b30000',
+                pointBackgroundColor: borderColor,
                 borderWidth: 2
               }
             ]
@@ -1412,63 +1499,90 @@
         applyFrameLayout(container.closest('.frame'), frame);
       }
 
-      function incrementLoad() {
-        pendingLoads++;
-      }
-
-      function decrementLoad() {
-        pendingLoads--;
-        if (pendingLoads <= 0) stopLoadingAnimation();
+      function updateLoadingStatus() {
+        if (!loadingOverlayActive) return;
+        var overlay = document.getElementById('loading-overlay');
+        if (!overlay) return;
+        var messageEl = document.getElementById('loading-message');
+        var detailEl = document.getElementById('loading-detail');
+        var barEl = document.getElementById('loading-progress-bar');
+        var remaining = Math.max(0, pendingLoads);
+        maxPendingLoads = Math.max(maxPendingLoads, remaining);
+        if (messageEl) {
+          messageEl.textContent = remaining > 0 ? 'Preparing your dashboard…' : 'Wrapping up…';
+        }
+        if (detailEl) {
+          var elapsed = loadingStart ? (performance.now() - loadingStart) / 1000 : 0;
+          var statusText = remaining > 0 ? remaining + ' task' + (remaining === 1 ? '' : 's') + ' remaining' : 'Ready';
+          detailEl.textContent = statusText + ' • ' + elapsed.toFixed(1) + 's elapsed';
+        }
+        if (barEl) {
+          var progress = maxPendingLoads ? (maxPendingLoads - remaining) / maxPendingLoads : remaining === 0 ? 1 : 0;
+          var percent = remaining === 0 ? 100 : Math.min(92, Math.max(18, Math.round(progress * 100)));
+          barEl.style.width = percent + '%';
+        }
       }
 
       function startLoadingAnimation() {
         var overlay = document.getElementById('loading-overlay');
-        var canvas = document.getElementById('loading-canvas');
-        if (!overlay || !canvas) return;
+        if (!overlay) return;
+        loadingOverlayActive = true;
         overlay.style.display = 'flex';
-        var ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = canvas.clientHeight;
-
-        var chars = 'アカサタナハマヤラワ漢字0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        chars = chars.split('');
-        var fontSize = 20;
-        var rows = Math.floor(canvas.height / fontSize);
-        var positions = Array(rows).fill(0);
-
-        function draw() {
-          ctx.fillStyle = 'rgba(0,0,0,0.1)';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = '#b30000';
-          ctx.font = fontSize + 'px monospace';
-          for (var i = 0; i < rows; i++) {
-            var text = chars[Math.floor(Math.random() * chars.length)];
-            ctx.fillText(text, positions[i], i * fontSize + fontSize);
-            if (positions[i] > canvas.width) {
-              positions[i] = 0;
-            } else {
-              positions[i] += fontSize;
-            }
-          }
-        }
-
-        loadingInterval = setInterval(draw, 50);
+        loadingStart = performance.now();
+        if (loadingTimer) clearInterval(loadingTimer);
+        updateLoadingStatus();
+        loadingTimer = setInterval(updateLoadingStatus, 120);
       }
 
       function stopLoadingAnimation() {
         var overlay = document.getElementById('loading-overlay');
         if (!overlay) return;
-        if (loadingInterval) {
-          clearInterval(loadingInterval);
-          loadingInterval = null;
+        updateLoadingStatus();
+        if (loadingTimer) {
+          clearInterval(loadingTimer);
+          loadingTimer = null;
         }
-        overlay.style.display = 'none';
+        setTimeout(function() {
+          overlay.style.display = 'none';
+          loadingOverlayActive = false;
+          loadingStart = null;
+          maxPendingLoads = 0;
+          var barEl = document.getElementById('loading-progress-bar');
+          if (barEl) barEl.style.width = '0%';
+        }, 220);
       }
 
-      function updateQuote() {
-        google.script.run.withSuccessHandler(function(text) {
+      function incrementLoad() {
+        pendingLoads++;
+        if (!loadingOverlayActive) {
+          maxPendingLoads = pendingLoads;
+          startLoadingAnimation();
+        } else {
+          updateLoadingStatus();
+        }
+      }
+
+      function decrementLoad() {
+        pendingLoads = Math.max(0, pendingLoads - 1);
+        updateLoadingStatus();
+        if (pendingLoads <= 0) {
+          stopLoadingAnimation();
+        }
+      }
+
+      function updateQuote(trackLoad) {
+        var shouldTrack = Boolean(trackLoad);
+        if (shouldTrack) incrementLoad();
+        var request = google.script.run.withSuccessHandler(function(text) {
           document.getElementById('weekly-quote').textContent = text;
-        }).getRandomQuote();
+          if (shouldTrack) decrementLoad();
+        });
+        if (shouldTrack) {
+          request = request.withFailureHandler(function() {
+            decrementLoad();
+          });
+        }
+        request.getRandomQuote();
       }
 
       function loadFrames(data) {
@@ -1486,9 +1600,16 @@
       }
 
       function initDriver() {
-        google.script.run.withSuccessHandler(function(name) {
-          document.getElementById('driver-name').value = name || '';
-        }).getDriverOfTheWeek();
+        incrementLoad();
+        google.script.run
+          .withSuccessHandler(function(name) {
+            document.getElementById('driver-name').value = name || '';
+            decrementLoad();
+          })
+          .withFailureHandler(function() {
+            decrementLoad();
+          })
+          .getDriverOfTheWeek();
         var input = document.getElementById('driver-name');
         function saveDriver() {
           google.script.run.saveDriverOfTheWeek(input.value);
@@ -1964,14 +2085,20 @@
         track.style.animation = 'scroll-left ' + duration + 's linear infinite';
       }
 
-document.addEventListener('DOMContentLoaded', function() {
-  startLoadingAnimation();
-});
     </script>
   </head>
   <body onload="init()">
-    <div id="loading-overlay">
-      <canvas id="loading-canvas"></canvas>
+    <div id="loading-overlay" role="status" aria-live="polite">
+      <div class="loading-card">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <div class="loading-text">
+          <strong id="loading-message">Preparing your dashboard…</strong>
+          <span id="loading-detail">Starting up</span>
+        </div>
+        <div class="loading-progress" aria-hidden="true">
+          <div id="loading-progress-bar"></div>
+        </div>
+      </div>
     </div>
     <div class="app-shell">
       <header class="header">
