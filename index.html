@@ -470,6 +470,7 @@
         overflow: hidden;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 28px 46px -28px rgba(15, 23, 42, 0.4);
         transition: height 0.35s ease;
+        contain: layout paint;
       }
 
       .carousel-window.is-transitioning {
@@ -482,7 +483,8 @@
         flex-direction: column;
         gap: 18px;
         --carousel-speed: 15s;
-        transition: opacity 0.6s ease;
+        transition: opacity 0.55s ease;
+        opacity: 0;
       }
 
       .carousel-track.is-layered {
@@ -503,6 +505,10 @@
       .carousel-track.is-exiting {
         opacity: 0;
         pointer-events: none;
+      }
+
+      .carousel-track.is-preparing {
+        visibility: hidden;
       }
 
       .carousel-row {
@@ -2298,26 +2304,35 @@
         });
       }
 
-      function startCarousel() {
-        var track = document.getElementById('carousel-track');
-        if (!track) return;
+      function createCarouselTrack(config) {
+        var track = document.createElement('div');
+        track.className = 'carousel-track is-preparing';
+        track.id = config.trackId;
 
-        if (driverImages.length === 0) {
-          track.replaceChildren();
-          track.style.removeProperty('--carousel-speed');
-          return;
+        var decodeTasks = [];
+
+        function waitForImage(img) {
+          if (typeof img.decode === 'function') {
+            decodeTasks.push(
+              img.decode().catch(function() {
+                /* Ignore decode failures and fall back to onload */
+              })
+            );
+            return;
+          }
+
+          if (img.complete) {
+            return;
+          }
+
+          decodeTasks.push(
+            new Promise(function(resolve) {
+              img.onload = img.onerror = function() {
+                resolve();
+              };
+            })
+          );
         }
-
-        var carousel = document.getElementById('driver-carousel');
-        var imgWidth = 140;
-        var gap = 16;
-        var rows = 2;
-        var width = carousel ? carousel.offsetWidth : 600;
-        var visiblePerRow = Math.max(3, Math.ceil(width / (imgWidth + gap)) + 2);
-
-        var newTrack = document.createElement('div');
-        newTrack.className = 'carousel-track';
-        newTrack.id = track.id || 'carousel-track';
 
         function shuffle(list) {
           var copy = list.slice();
@@ -2334,14 +2349,14 @@
           var baseSequence = [];
           var pool = shuffle(driverImages);
 
-          while (baseSequence.length < visiblePerRow) {
+          while (baseSequence.length < config.visiblePerRow) {
             if (!pool.length) {
               pool = shuffle(driverImages);
             }
             baseSequence.push(pool.shift());
           }
 
-          baseSequence = baseSequence.slice(0, visiblePerRow);
+          baseSequence = baseSequence.slice(0, config.visiblePerRow);
 
           if (driverImages.length > 1) {
             var attempts = 0;
@@ -2368,76 +2383,80 @@
           return baseSequence.concat(baseSequence);
         }
 
-        var totalImagesPerRow = visiblePerRow * 2;
         var previousBase = null;
-        for (var rowIndex = 0; rowIndex < rows; rowIndex++) {
+        for (var rowIndex = 0; rowIndex < config.rows; rowIndex++) {
           var row = document.createElement('div');
           row.className = 'carousel-row';
           var rowSequence = buildRandomRow(previousBase);
-          previousBase = rowSequence.slice(0, visiblePerRow);
+          previousBase = rowSequence.slice(0, config.visiblePerRow);
           rowSequence.forEach(function(src) {
             var img = document.createElement('img');
             img.src = src;
+            waitForImage(img);
             row.appendChild(img);
           });
-          newTrack.appendChild(row);
+          track.appendChild(row);
         }
 
-        var duration = Math.max(10, (totalImagesPerRow * 5) / 1.5);
-        duration = duration / 2;
-        newTrack.style.setProperty('--carousel-speed', duration.toFixed(2) + 's');
+        track.style.setProperty('--carousel-speed', config.duration.toFixed(2) + 's');
 
-        var container = track.parentNode;
-        var oldTrack = track;
-        var isInitialRender = !oldTrack.children.length;
+        return {
+          element: track,
+          ready: Promise.all(decodeTasks).catch(function() {
+            /* Intentionally swallow decode errors */
+          })
+        };
+      }
 
-        if (isInitialRender) {
-          container.replaceChild(newTrack, oldTrack);
+      function startCarousel() {
+        var placeholder = document.getElementById('carousel-track');
+        if (!placeholder) return;
+
+        var container = placeholder.parentNode;
+
+        if (driverImages.length === 0) {
+          placeholder.replaceChildren();
+          placeholder.classList.add('is-active');
+          placeholder.classList.remove('is-layered', 'is-entering', 'is-exiting', 'is-preparing');
+          placeholder.removeAttribute('aria-hidden');
+          placeholder.style.removeProperty('--carousel-speed');
           container.classList.remove('is-transitioning');
           container.style.removeProperty('--carousel-height');
           delete container.dataset.carouselToken;
           return;
         }
 
-        var containerHeight = container.offsetHeight;
+        var carousel = document.getElementById('driver-carousel');
+        var imgWidth = 140;
+        var gap = 16;
+        var rows = 2;
+        var width = carousel ? carousel.offsetWidth : 600;
+        var visiblePerRow = Math.max(3, Math.ceil(width / (imgWidth + gap)) + 2);
+        var totalImagesPerRow = visiblePerRow * 2;
+        var duration = Math.max(10, (totalImagesPerRow * 5) / 1.5) / 2;
+
+        var trackId = placeholder.id || 'carousel-track';
+        var config = {
+          trackId: trackId,
+          visiblePerRow: visiblePerRow,
+          rows: rows,
+          duration: duration
+        };
+
+        var activeTrack = container.querySelector('.carousel-track.is-active') || placeholder;
+        var isInitialRender = !activeTrack.children.length;
         var transitionToken = Date.now().toString(36) + Math.random().toString(36).slice(2);
         container.dataset.carouselToken = transitionToken;
-        container.style.setProperty('--carousel-height', containerHeight + 'px');
-        container.classList.add('is-transitioning');
 
-        oldTrack.setAttribute('aria-hidden', 'true');
-        oldTrack.classList.add('is-layered');
-        oldTrack.removeAttribute('id');
-
-        newTrack.setAttribute('aria-hidden', 'true');
-        newTrack.classList.add('is-layered', 'is-entering');
-        container.appendChild(newTrack);
-
-        requestAnimationFrame(function() {
-          container.style.setProperty(
-            '--carousel-height',
-            Math.max(0, newTrack.offsetHeight) + 'px'
-          );
-          newTrack.classList.add('is-active');
-          newTrack.classList.remove('is-entering');
-          newTrack.removeAttribute('aria-hidden');
-          oldTrack.classList.add('is-exiting');
+        Array.from(container.querySelectorAll('.carousel-track.is-layered.is-exiting')).forEach(function(node) {
+          if (node !== activeTrack && node.parentNode === container) {
+            container.removeChild(node);
+          }
         });
 
-        var finalizeTransition = function(event) {
-          if (event.propertyName !== 'opacity') {
-            return;
-          }
+        var build = createCarouselTrack(config);
 
-          newTrack.removeEventListener('transitionend', finalizeTransition);
-
-          if (oldTrack.parentNode === container) {
-            container.removeChild(oldTrack);
-          }
-
-          newTrack.classList.remove('is-layered', 'is-active');
-          newTrack.removeAttribute('aria-hidden');
-
+        var finalize = function() {
           if (container.dataset.carouselToken === transitionToken) {
             container.classList.remove('is-transitioning');
             container.style.removeProperty('--carousel-height');
@@ -2445,7 +2464,68 @@
           }
         };
 
-        newTrack.addEventListener('transitionend', finalizeTransition);
+        build.ready.then(function() {
+          if (container.dataset.carouselToken !== transitionToken) {
+            return;
+          }
+
+          var newTrack = build.element;
+
+          if (!container.contains(activeTrack)) {
+            activeTrack = container.querySelector('.carousel-track.is-active') || placeholder;
+          }
+
+          if (isInitialRender) {
+            newTrack.classList.remove('is-preparing');
+            newTrack.classList.add('is-active');
+            container.replaceChild(newTrack, activeTrack);
+            finalize();
+            return;
+          }
+
+          var previousHeight = container.offsetHeight;
+          container.style.setProperty('--carousel-height', previousHeight + 'px');
+          container.classList.add('is-transitioning');
+
+          activeTrack.setAttribute('aria-hidden', 'true');
+          activeTrack.classList.add('is-layered');
+          activeTrack.classList.remove('is-active');
+          if (activeTrack.id === trackId) {
+            activeTrack.removeAttribute('id');
+          }
+
+          newTrack.setAttribute('aria-hidden', 'true');
+          newTrack.classList.add('is-layered', 'is-entering');
+          newTrack.id = trackId;
+          container.appendChild(newTrack);
+
+          requestAnimationFrame(function() {
+            var nextHeight = Math.max(0, newTrack.offsetHeight);
+            container.style.setProperty('--carousel-height', nextHeight + 'px');
+            newTrack.classList.remove('is-entering', 'is-preparing');
+            newTrack.classList.add('is-active');
+            newTrack.removeAttribute('aria-hidden');
+            activeTrack.classList.add('is-exiting');
+          });
+
+          var handleTransitionEnd = function(event) {
+            if (event.propertyName !== 'opacity') {
+              return;
+            }
+
+            newTrack.removeEventListener('transitionend', handleTransitionEnd);
+
+            if (activeTrack.parentNode === container) {
+              container.removeChild(activeTrack);
+            }
+
+            newTrack.classList.remove('is-layered');
+            newTrack.removeAttribute('aria-hidden');
+            finalize();
+          };
+
+          newTrack.addEventListener('transitionend', handleTransitionEnd);
+        });
       }
 
     </script>
