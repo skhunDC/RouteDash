@@ -462,19 +462,47 @@
       }
 
       .carousel-window {
+        position: relative;
         border-radius: 20px;
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(var(--brand-secondary-rgb), 0.12));
         border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
         padding: 18px;
         overflow: hidden;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 28px 46px -28px rgba(15, 23, 42, 0.4);
+        transition: height 0.35s ease;
+      }
+
+      .carousel-window.is-transitioning {
+        height: var(--carousel-height);
       }
 
       .carousel-track {
+        position: relative;
         display: flex;
         flex-direction: column;
         gap: 18px;
         --carousel-speed: 15s;
+        transition: opacity 0.6s ease;
+      }
+
+      .carousel-track.is-layered {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+      }
+
+      .carousel-track.is-entering {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .carousel-track.is-active {
+        opacity: 1;
+      }
+
+      .carousel-track.is-exiting {
+        opacity: 0;
+        pointer-events: none;
       }
 
       .carousel-row {
@@ -2288,8 +2316,8 @@
         var visiblePerRow = Math.max(3, Math.ceil(width / (imgWidth + gap)) + 2);
 
         var newTrack = document.createElement('div');
-        newTrack.className = track.className;
-        newTrack.id = track.id;
+        newTrack.className = 'carousel-track';
+        newTrack.id = track.id || 'carousel-track';
 
         function shuffle(list) {
           var copy = list.slice();
@@ -2359,7 +2387,65 @@
         duration = duration / 2;
         newTrack.style.setProperty('--carousel-speed', duration.toFixed(2) + 's');
 
-        track.parentNode.replaceChild(newTrack, track);
+        var container = track.parentNode;
+        var oldTrack = track;
+        var isInitialRender = !oldTrack.children.length;
+
+        if (isInitialRender) {
+          container.replaceChild(newTrack, oldTrack);
+          container.classList.remove('is-transitioning');
+          container.style.removeProperty('--carousel-height');
+          delete container.dataset.carouselToken;
+          return;
+        }
+
+        var containerHeight = container.offsetHeight;
+        var transitionToken = Date.now().toString(36) + Math.random().toString(36).slice(2);
+        container.dataset.carouselToken = transitionToken;
+        container.style.setProperty('--carousel-height', containerHeight + 'px');
+        container.classList.add('is-transitioning');
+
+        oldTrack.setAttribute('aria-hidden', 'true');
+        oldTrack.classList.add('is-layered');
+        oldTrack.removeAttribute('id');
+
+        newTrack.setAttribute('aria-hidden', 'true');
+        newTrack.classList.add('is-layered', 'is-entering');
+        container.appendChild(newTrack);
+
+        requestAnimationFrame(function() {
+          container.style.setProperty(
+            '--carousel-height',
+            Math.max(0, newTrack.offsetHeight) + 'px'
+          );
+          newTrack.classList.add('is-active');
+          newTrack.classList.remove('is-entering');
+          newTrack.removeAttribute('aria-hidden');
+          oldTrack.classList.add('is-exiting');
+        });
+
+        var finalizeTransition = function(event) {
+          if (event.propertyName !== 'opacity') {
+            return;
+          }
+
+          newTrack.removeEventListener('transitionend', finalizeTransition);
+
+          if (oldTrack.parentNode === container) {
+            container.removeChild(oldTrack);
+          }
+
+          newTrack.classList.remove('is-layered', 'is-active');
+          newTrack.removeAttribute('aria-hidden');
+
+          if (container.dataset.carouselToken === transitionToken) {
+            container.classList.remove('is-transitioning');
+            container.style.removeProperty('--carousel-height');
+            delete container.dataset.carouselToken;
+          }
+        };
+
+        newTrack.addEventListener('transitionend', finalizeTransition);
       }
 
     </script>
