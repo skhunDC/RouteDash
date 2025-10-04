@@ -21,7 +21,9 @@
         --text-primary: #0f172a;
         --text-secondary: #475569;
         --border-soft: #e2e8f0;
-        --shadow-soft: 0 24px 45px rgba(15, 23, 42, 0.12);
+        --shadow-soft: 0 28px 55px -24px rgba(15, 23, 42, 0.28), 0 18px 32px -18px rgba(var(--brand-secondary-rgb), 0.25);
+        --shadow-strong: 0 40px 80px -36px rgba(15, 23, 42, 0.45), 0 26px 60px -30px rgba(var(--brand-primary-rgb), 0.35);
+        --glass-highlight: rgba(255, 255, 255, 0.65);
         --radius-lg: 20px;
       }
 
@@ -32,7 +34,7 @@
       body {
         margin: 0;
         font-family: 'Inter', 'Segoe UI', sans-serif;
-        background: radial-gradient(circle at top left, #eff6ff 0%, #f8fafc 45%, #f1f5f9 100%);
+        background: radial-gradient(circle at top left, rgba(var(--brand-primary-rgb), 0.18) 0%, #eff6ff 32%, #f8fafc 58%, #f1f5f9 100%);
         color: var(--text-primary);
       }
 
@@ -52,11 +54,23 @@
         gap: 24px;
         align-items: center;
         justify-content: space-between;
-        padding: 24px;
+        padding: 28px;
         border-radius: var(--radius-lg);
-        background: var(--surface);
-        box-shadow: var(--shadow-soft);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(var(--brand-secondary-rgb), 0.14));
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+        box-shadow: var(--shadow-strong);
         overflow: visible;
+      }
+
+      .header::before {
+        content: '';
+        position: absolute;
+        inset: 1px;
+        border-radius: inherit;
+        background: linear-gradient(160deg, var(--glass-highlight), rgba(255, 255, 255, 0));
+        opacity: 0.65;
+        pointer-events: none;
+        z-index: 1;
       }
 
       .header::after {
@@ -67,6 +81,7 @@
         transform: rotate(-12deg);
         pointer-events: none;
         border-radius: inherit;
+        z-index: 0;
       }
 
       .logo {
@@ -118,10 +133,12 @@
         align-items: center;
         gap: 8px;
         padding: 8px 14px;
-        background: var(--surface-muted);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(var(--brand-secondary-rgb), 0.2));
         border-radius: 999px;
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
         font-weight: 600;
         color: var(--brand-dark);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 12px 22px -18px rgba(var(--brand-primary-rgb), 0.5);
       }
 
       .weather span {
@@ -144,44 +161,47 @@
 
       .add-frame-btn,
       .lock-btn {
-        padding: 10px 18px;
+        padding: 12px 22px;
         border-radius: 999px;
         border: none;
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+        box-shadow: 0 16px 28px -14px rgba(var(--brand-primary-rgb), 0.4);
       }
 
       #add-frame {
         background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
         color: #ffffff;
-        box-shadow: 0 12px 22px rgba(var(--brand-primary-rgb), 0.25);
+        box-shadow: 0 18px 32px -12px rgba(var(--brand-primary-rgb), 0.55), 0 12px 25px -18px rgba(14, 165, 233, 0.55);
       }
 
       #add-frame:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 16px 32px rgba(var(--brand-primary-rgb), 0.28);
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 26px 40px -12px rgba(var(--brand-primary-rgb), 0.55), 0 18px 28px -16px rgba(14, 165, 233, 0.6);
       }
 
       .lock-btn {
-        background: rgba(31, 41, 55, 0.08);
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.18));
         color: var(--brand-dark);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 12px 22px -16px rgba(15, 23, 42, 0.6);
       }
 
       .lock-btn:hover {
-        background: rgba(31, 41, 55, 0.15);
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.14), rgba(15, 23, 42, 0.26));
+        transform: translateY(-3px);
       }
 
       #upload-toggle {
         background: rgba(var(--brand-primary-rgb), 0.12);
         color: var(--brand-primary);
-        box-shadow: none;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 14px 22px -16px rgba(var(--brand-primary-rgb), 0.5);
       }
 
       #upload-toggle:hover {
-        background: rgba(var(--brand-primary-rgb), 0.2);
-        transform: translateY(-1px);
+        background: rgba(var(--brand-primary-rgb), 0.22);
+        transform: translateY(-3px);
       }
 
       .upload-container {
@@ -228,13 +248,29 @@
       }
 
       .workspace {
-        background: var(--surface);
+        position: relative;
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(var(--brand-secondary-rgb), 0.06));
         border-radius: var(--radius-lg);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.1);
         box-shadow: var(--shadow-soft);
-        padding: 24px;
+        padding: 28px;
         display: flex;
         flex-direction: column;
         gap: 20px;
+        overflow: hidden;
+      }
+
+      .workspace::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0));
+        pointer-events: none;
+      }
+
+      .workspace > * {
+        position: relative;
+        z-index: 1;
       }
 
       .workspace-top {
@@ -260,9 +296,10 @@
         position: relative;
         flex: 1;
         min-height: 560px;
-        border-radius: 20px;
-        border: 1px solid var(--border-soft);
-        background: linear-gradient(135deg, rgba(var(--brand-secondary-rgb), 0.08), rgba(var(--brand-secondary-rgb), 0)) var(--surface-muted);
+        border-radius: 24px;
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+        background: linear-gradient(135deg, rgba(var(--brand-secondary-rgb), 0.12), rgba(var(--brand-secondary-rgb), 0)) var(--surface-muted);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -30px 60px rgba(15, 23, 42, 0.08);
         overflow: hidden;
       }
 
@@ -284,13 +321,37 @@
       }
 
       .sidebar-card {
-        background: var(--surface);
+        position: relative;
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(var(--brand-secondary-rgb), 0.08));
         border-radius: var(--radius-lg);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
         box-shadow: var(--shadow-soft);
-        padding: 24px;
+        padding: 26px;
         display: flex;
         flex-direction: column;
         gap: 16px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .sidebar-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .sidebar-card > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .sidebar-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-strong);
       }
 
       .card-header {
@@ -354,17 +415,31 @@
       }
 
       .carousel-window {
-        border-radius: 16px;
-        background: var(--surface-muted);
-        padding: 12px;
+        border-radius: 20px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(var(--brand-secondary-rgb), 0.12));
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+        padding: 18px;
         overflow: hidden;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 28px 46px -28px rgba(15, 23, 42, 0.4);
       }
 
       .carousel-track {
         display: flex;
+        flex-direction: column;
+        gap: 18px;
+        --carousel-speed: 30s;
+      }
+
+      .carousel-row {
+        display: flex;
         align-items: center;
         gap: 16px;
-        animation: scroll-left 40s linear infinite;
+        animation: scroll-left var(--carousel-speed, 30s) linear infinite;
+        will-change: transform;
+      }
+
+      .carousel-row:nth-child(2) {
+        animation-delay: calc(var(--carousel-speed, 30s) / -2);
       }
 
       @keyframes scroll-left {
@@ -377,12 +452,14 @@
       }
 
       .driver-carousel img {
-        width: 120px;
-        height: 120px;
-        border-radius: 16px;
+        width: 124px;
+        height: 124px;
+        border-radius: 18px;
         object-fit: cover;
         object-position: top;
-        box-shadow: 0 10px 20px rgba(31, 41, 55, 0.18);
+        box-shadow: 0 20px 34px -20px rgba(15, 23, 42, 0.55), 0 12px 20px -16px rgba(var(--brand-primary-rgb), 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        background: radial-gradient(circle at top, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0));
         flex-shrink: 0;
       }
 
@@ -457,14 +534,33 @@
 
       .frame {
         position: absolute;
-        border-radius: 20px;
-        border: 1px solid rgba(31, 41, 55, 0.08);
-        background: var(--surface);
-        box-shadow: 0 22px 48px rgba(15, 23, 42, 0.18);
+        border-radius: 22px;
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(var(--brand-secondary-rgb), 0.12));
+        box-shadow: var(--shadow-strong);
         display: flex;
         flex-direction: column;
         overflow: hidden;
         cursor: default;
+        transition: transform 0.35s ease, box-shadow 0.35s ease;
+      }
+
+      .frame::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .frame:hover {
+        box-shadow: 0 46px 92px -32px rgba(15, 23, 42, 0.55);
+      }
+
+      .frame > * {
+        position: relative;
+        z-index: 1;
       }
 
       .frame-header {
@@ -473,9 +569,9 @@
         justify-content: space-between;
         background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
         color: #ffffff;
-        padding: 14px 18px;
+        padding: 16px 20px;
         user-select: none;
-        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.32);
       }
 
       .frame-title {
@@ -711,6 +807,42 @@
       .quote-card {
         position: relative;
         z-index: 2;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .sidebar-card,
+        .frame,
+        .add-frame-btn,
+        .lock-btn {
+          transition: none !important;
+        }
+
+        .sidebar-card:hover,
+        #add-frame:hover,
+        .lock-btn:hover,
+        #upload-toggle:hover {
+          transform: none;
+        }
+
+        .sidebar-card:hover {
+          box-shadow: var(--shadow-soft);
+        }
+
+        #add-frame:hover {
+          box-shadow: 0 18px 32px -12px rgba(var(--brand-primary-rgb), 0.55), 0 12px 25px -18px rgba(14, 165, 233, 0.55);
+        }
+
+        .lock-btn:hover {
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 12px 22px -16px rgba(15, 23, 42, 0.6);
+        }
+
+        #upload-toggle:hover {
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 14px 22px -16px rgba(var(--brand-primary-rgb), 0.5);
+        }
+
+        .carousel-row {
+          animation: none !important;
+        }
       }
 
       @media (max-width: 1100px) {
@@ -2066,24 +2198,41 @@
         var track = document.getElementById('carousel-track');
         if (!track) return;
         track.innerHTML = '';
-        track.style.animation = 'none';
+        track.style.removeProperty('animation');
+        track.style.removeProperty('--carousel-speed');
         if (driverImages.length === 0) return;
 
         var carousel = document.getElementById('driver-carousel');
-        var imgWidth = 250;
-        var repeat = Math.max(2, Math.ceil(carousel.offsetWidth / (driverImages.length * imgWidth)) + 1);
-        var images = [];
-        for (var i = 0; i < repeat; i++) {
-          images = images.concat(driverImages);
+        var imgWidth = 140;
+        var gap = 16;
+        var rows = 2;
+        var width = carousel ? carousel.offsetWidth : 600;
+        var visiblePerRow = Math.max(3, Math.ceil(width / (imgWidth + gap)) + 2);
+
+        function buildRow(startIndex) {
+          var sequence = [];
+          for (var i = 0; sequence.length < visiblePerRow; i++) {
+            sequence.push(driverImages[(startIndex + i) % driverImages.length]);
+          }
+          return sequence.concat(sequence);
         }
-        images.forEach(function(src) {
-          var img = document.createElement('img');
-          img.src = src;
-          track.appendChild(img);
+
+        var secondOffset = driverImages.length > 1 ? Math.ceil(driverImages.length / rows) : 0;
+        var offsets = [0, secondOffset];
+        var totalImagesPerRow = visiblePerRow * 2;
+        offsets.forEach(function(offset) {
+          var row = document.createElement('div');
+          row.className = 'carousel-row';
+          buildRow(offset).forEach(function(src) {
+            var img = document.createElement('img');
+            img.src = src;
+            row.appendChild(img);
+          });
+          track.appendChild(row);
         });
-        var duration = images.length * 5;
-        void track.offsetWidth;
-        track.style.animation = 'scroll-left ' + duration + 's linear infinite';
+
+        var duration = Math.max(10, (totalImagesPerRow * 5) / 1.5);
+        track.style.setProperty('--carousel-speed', duration.toFixed(2) + 's');
       }
 
     </script>
