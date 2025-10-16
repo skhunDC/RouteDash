@@ -833,6 +833,10 @@
         font-style: italic;
       }
 
+      .dashboard-list {
+        margin-top: 16px;
+      }
+
       .dashboard-list table {
         width: 100%;
         border-collapse: collapse;
@@ -1697,9 +1701,23 @@
         form.appendChild(sizeField);
         container.appendChild(form);
 
+        var entries = extractDashboardData(frame);
+
+        var chartContainer = document.createElement('div');
+        chartContainer.className = 'dashboard-chart';
+        var canvas = document.createElement('canvas');
+        chartContainer.appendChild(canvas);
+        container.appendChild(chartContainer);
+        if (entries.length === 0) {
+          canvas.style.display = 'none';
+          destroyDashboard(frame.id);
+        } else {
+          canvas.style.display = 'block';
+          updateDashboardChart(frame, entries, canvas);
+        }
+
         var dataWrapper = document.createElement('div');
         dataWrapper.className = 'dashboard-list';
-        var entries = extractDashboardData(frame);
         if (entries.length === 0) {
           destroyDashboard(frame.id);
           var empty = document.createElement('div');
@@ -1725,19 +1743,6 @@
           dataWrapper.appendChild(table);
         }
         container.appendChild(dataWrapper);
-
-        var chartContainer = document.createElement('div');
-        chartContainer.className = 'dashboard-chart';
-        var canvas = document.createElement('canvas');
-        chartContainer.appendChild(canvas);
-        container.appendChild(chartContainer);
-        if (entries.length === 0) {
-          canvas.style.display = 'none';
-          destroyDashboard(frame.id);
-        } else {
-          canvas.style.display = 'block';
-          updateDashboardChart(frame, entries, canvas);
-        }
 
         applyFrameLayout(container.closest('.frame'), frame);
       }
