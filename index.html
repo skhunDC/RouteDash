@@ -1569,7 +1569,12 @@
                 ticks: { precision: 0 }
               },
               x: {
-                ticks: { autoSkip: true, maxRotation: 0 }
+                ticks: {
+                  autoSkip: false,
+                  maxRotation: 50,
+                  minRotation: 30,
+                  padding: 6
+                }
               }
             },
             plugins: {
