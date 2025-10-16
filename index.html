@@ -590,6 +590,19 @@
       .loading-text strong {
         color: var(--text-primary);
         font-size: 1.05rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        line-height: 1.25;
+      }
+
+      .loading-text strong span {
+        display: block;
+      }
+
+      .loading-text .loading-name {
+        font-weight: 600;
       }
 
       .loading-progress {
@@ -1756,13 +1769,15 @@
         if (!loadingOverlayActive) return;
         var overlay = document.getElementById('loading-overlay');
         if (!overlay) return;
-        var messageEl = document.getElementById('loading-message');
+        var statusEl = document.getElementById('loading-status');
         var detailEl = document.getElementById('loading-detail');
         var barEl = document.getElementById('loading-progress-bar');
         var remaining = Math.max(0, pendingLoads);
         maxPendingLoads = Math.max(maxPendingLoads, remaining);
-        if (messageEl) {
-          messageEl.textContent = remaining > 0 ? 'Preparing your dashboard…' : 'Wrapping up…';
+        if (statusEl) {
+          statusEl.textContent = remaining > 0
+            ? 'Preparing your Dashboard…'
+            : 'Wrapping up…';
         }
         if (detailEl) {
           var elapsed = loadingStart ? (performance.now() - loadingStart) / 1000 : 0;
@@ -2536,7 +2551,10 @@
       <div class="loading-card">
         <div class="loading-spinner" aria-hidden="true"></div>
         <div class="loading-text">
-          <strong id="loading-message">Preparing your dashboard…</strong>
+          <strong id="loading-message">
+            <span id="loading-status">Preparing your Dashboard…</span>
+            <span class="loading-name">Mr. Perry</span>
+          </strong>
           <span id="loading-detail">Starting up</span>
         </div>
         <div class="loading-progress" aria-hidden="true">
