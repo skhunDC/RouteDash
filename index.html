@@ -770,6 +770,12 @@
         overflow: auto;
       }
 
+      .dashboard.dashboard-disabled {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
       .dashboard-header {
         display: flex;
         align-items: center;
@@ -781,6 +787,15 @@
         letter-spacing: 0.08em;
         color: var(--text-secondary);
         margin-bottom: 10px;
+      }
+
+      .dashboard-disabled .dashboard-header {
+        justify-content: flex-start;
+        text-transform: none;
+        letter-spacing: 0.02em;
+        color: var(--text-primary);
+        margin-bottom: 0;
+        gap: 8px;
       }
 
       .dashboard-header-left {
@@ -844,6 +859,12 @@
         font-size: 0.85rem;
         color: var(--text-secondary);
         font-style: italic;
+      }
+
+      .dashboard-disabled-message {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
       }
 
       .dashboard-list {
@@ -1198,6 +1219,24 @@
       var maxPendingLoads = 0;
       var chartInstances = {};
       var frameIdCounter = 0;
+      var DASHBOARD_EXEMPT_TITLES = ["Who's Off, When?", 'Ride-Along Schedule'];
+
+      function shouldSkipDashboard(frame) {
+        if (!frame || !frame.title) return false;
+        var normalized = frame.title
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .trim();
+        return DASHBOARD_EXEMPT_TITLES.some(function(candidate) {
+          return (
+            normalized ===
+            candidate
+              .toLowerCase()
+              .replace(/\s+/g, ' ')
+              .trim()
+          );
+        });
+      }
 
       function generateFrameId() {
         frameIdCounter += 1;
@@ -1270,6 +1309,12 @@
           expanded: { sheet: '1.4 1 65%', dashboard: '1 1 35%' }
         };
         var selected = sizes[size] || sizes.balanced;
+        if (dashEl.classList.contains('dashboard-disabled')) {
+          sheetEl.style.display = '';
+          sheetEl.style.flex = '1 1 100%';
+          dashEl.style.flex = '0 0 auto';
+          return;
+        }
         if (dashboard.visible === false) {
           sheetEl.style.display = '';
           sheetEl.style.flex = '1 1 100%';
@@ -1630,34 +1675,43 @@
         ensureFrameMetadata(frame);
         var dashboard = frame.dashboard;
         container.innerHTML = '';
+        container.classList.remove('dashboard-hidden');
+        container.classList.remove('dashboard-disabled');
+        var skipDashboard = shouldSkipDashboard(frame);
 
         var header = document.createElement('div');
         header.className = 'dashboard-header';
         var headerLeft = document.createElement('div');
         headerLeft.className = 'dashboard-header-left';
         var title = document.createElement('span');
-        title.textContent = 'Dashboard';
+        title.textContent = skipDashboard ? frame.title || 'Dashboard' : 'Dashboard';
         headerLeft.appendChild(title);
 
-        var toggleBtn = document.createElement('button');
-        toggleBtn.type = 'button';
-        toggleBtn.textContent = dashboard.visible === false ? 'Show Dashboard' : 'Hide Dashboard';
-        toggleBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          dashboard.visible = !dashboard.visible;
-          if (dashboard.visible === false) {
-            destroyDashboard(frame.id);
-          }
-          applyFrameLayout(container.closest('.frame'), frame);
-          if (framesLoaded) saveFrames();
-          renderDashboard(container, index);
-        });
-        headerLeft.appendChild(toggleBtn);
+        if (!skipDashboard) {
+          var toggleBtn = document.createElement('button');
+          toggleBtn.type = 'button';
+          toggleBtn.textContent = dashboard.visible === false ? 'Show Dashboard' : 'Hide Dashboard';
+          toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dashboard.visible = !dashboard.visible;
+            if (dashboard.visible === false) {
+              destroyDashboard(frame.id);
+            }
+            applyFrameLayout(container.closest('.frame'), frame);
+            if (framesLoaded) saveFrames();
+            renderDashboard(container, index);
+          });
+          headerLeft.appendChild(toggleBtn);
+        }
         header.appendChild(headerLeft);
 
-        container.classList.toggle('dashboard-hidden', dashboard.visible === false);
+        if (skipDashboard) {
+          container.classList.add('dashboard-disabled');
+        } else {
+          container.classList.toggle('dashboard-hidden', dashboard.visible === false);
+        }
 
-        if (dashboard.visible !== false) {
+        if (!skipDashboard && dashboard.visible !== false) {
           var typeLabel = document.createElement('label');
           typeLabel.textContent = 'Chart';
           var select = document.createElement('select');
@@ -1678,6 +1732,17 @@
           header.appendChild(typeLabel);
         }
         container.appendChild(header);
+
+        if (skipDashboard) {
+          destroyDashboard(frame.id);
+          var info = document.createElement('div');
+          info.className = 'dashboard-disabled-message';
+          info.setAttribute('role', 'note');
+          info.textContent = 'This frame shares schedule details without a dashboard visualization.';
+          container.appendChild(info);
+          applyFrameLayout(container.closest('.frame'), frame);
+          return;
+        }
 
         if (dashboard.visible === false) {
           var hiddenMessage = document.createElement('div');
@@ -1976,6 +2041,7 @@
           var idx = parseInt(div.dataset.index, 10);
           frames[idx].title = title.textContent;
           saveFrames();
+          refreshDashboard(idx);
           var chart = chartInstances[frames[idx].id];
           if (chart) {
             chart.data.datasets.forEach(function(ds) {
