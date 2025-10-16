@@ -1827,7 +1827,9 @@
         var remaining = Math.max(0, pendingLoads);
         maxPendingLoads = Math.max(maxPendingLoads, remaining);
         if (messageEl) {
-          messageEl.textContent = remaining > 0 ? 'Preparing your dashboard…' : 'Wrapping up…';
+          messageEl.textContent = remaining > 0
+            ? 'Preparing your Dashboard Mr. Perry…'
+            : 'Wrapping up…';
         }
         if (detailEl) {
           var elapsed = loadingStart ? (performance.now() - loadingStart) / 1000 : 0;
