@@ -1762,7 +1762,9 @@
         var remaining = Math.max(0, pendingLoads);
         maxPendingLoads = Math.max(maxPendingLoads, remaining);
         if (messageEl) {
-          messageEl.textContent = remaining > 0 ? 'Preparing your dashboard…' : 'Wrapping up…';
+          messageEl.textContent = remaining > 0
+            ? 'Preparing your Dashboard Mr. Perry…'
+            : 'Wrapping up…';
         }
         if (detailEl) {
           var elapsed = loadingStart ? (performance.now() - loadingStart) / 1000 : 0;
@@ -2536,7 +2538,7 @@
       <div class="loading-card">
         <div class="loading-spinner" aria-hidden="true"></div>
         <div class="loading-text">
-          <strong id="loading-message">Preparing your dashboard…</strong>
+          <strong id="loading-message">Preparing your Dashboard Mr. Perry</strong>
           <span id="loading-detail">Starting up</span>
         </div>
         <div class="loading-progress" aria-hidden="true">
