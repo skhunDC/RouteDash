@@ -958,6 +958,109 @@
         font-style: italic;
       }
 
+      .weekly-sales-summary,
+      .ytd-sales-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .weekly-sales-card,
+      .ytd-sales-card {
+        position: relative;
+        border-radius: 18px;
+        padding: 16px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.94), rgba(var(--brand-secondary-rgb), 0.2));
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+        box-shadow: var(--shadow-soft);
+        min-height: 108px;
+      }
+
+      .weekly-sales-card::after,
+      .ytd-sales-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(140deg, rgba(var(--brand-primary-rgb), 0.08), rgba(255, 255, 255, 0));
+        pointer-events: none;
+      }
+
+      .weekly-sales-card-label,
+      .ytd-sales-card-label {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(15, 23, 42, 0.65);
+        font-weight: 700;
+      }
+
+      .weekly-sales-card-value,
+      .ytd-sales-card-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .weekly-sales-card-delta,
+      .ytd-sales-card-delta {
+        overflow: hidden;
+      }
+
+      .sales-delta-badge {
+        align-self: flex-start;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        background: rgba(var(--brand-primary-rgb), 0.14);
+        color: var(--brand-dark);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      .sales-delta-badge[data-sign='positive'] {
+        background: rgba(34, 197, 94, 0.2);
+        color: #065f46;
+      }
+
+      .sales-delta-badge[data-sign='negative'] {
+        background: rgba(248, 113, 113, 0.2);
+        color: #991b1b;
+      }
+
+      .sales-delta-badge[data-sign='zero'] {
+        background: rgba(148, 163, 184, 0.25);
+        color: rgba(15, 23, 42, 0.7);
+      }
+
+      .sales-card-footnote {
+        font-size: 0.78rem;
+        color: rgba(15, 23, 42, 0.65);
+        font-weight: 600;
+      }
+
+      .weekly-sales-card[data-sign='positive'] .weekly-sales-card-value,
+      .ytd-sales-card[data-sign='positive'] .ytd-sales-card-value {
+        color: #047857;
+      }
+
+      .weekly-sales-card[data-sign='negative'] .weekly-sales-card-value,
+      .ytd-sales-card[data-sign='negative'] .ytd-sales-card-value {
+        color: #b91c1c;
+      }
+
+      .weekly-sales-card[data-sign='zero'] .weekly-sales-card-value,
+      .ytd-sales-card[data-sign='zero'] .ytd-sales-card-value {
+        color: rgba(15, 23, 42, 0.75);
+      }
+
       .dashboard-chart {
         position: relative;
         height: 210px;
@@ -966,6 +1069,10 @@
 
       .dashboard-chart.weekly-sales-chart {
         height: 262.5px;
+      }
+
+      .dashboard-chart.ytd-sales-chart {
+        height: 273px;
       }
 
       .dashboard-chart canvas {
@@ -1420,6 +1527,33 @@
             frame.dashboard.valueColumn = maxIndex;
             updated = true;
           }
+          var ytdComparison = [1, 2].filter(function(index) {
+            return index <= maxIndex;
+          });
+          if (ytdComparison.length >= 2) {
+            if (!arraysEqual(frame.dashboard.comparisonColumns || [], ytdComparison)) {
+              frame.dashboard.comparisonColumns = ytdComparison;
+              updated = true;
+            }
+            if (frame.dashboard.valueColumn !== ytdComparison[1]) {
+              frame.dashboard.valueColumn = ytdComparison[1];
+              updated = true;
+            }
+            if (
+              frame.dashboard.labelColumn === frame.dashboard.valueColumn ||
+              ytdComparison.indexOf(frame.dashboard.labelColumn) !== -1
+            ) {
+              var ytdLabelFallback = 0;
+              while (ytdLabelFallback <= maxIndex && ytdComparison.indexOf(ytdLabelFallback) !== -1) {
+                ytdLabelFallback++;
+              }
+              if (ytdLabelFallback > maxIndex) ytdLabelFallback = 0;
+              if (frame.dashboard.labelColumn !== ytdLabelFallback) {
+                frame.dashboard.labelColumn = ytdLabelFallback;
+                updated = true;
+              }
+            }
+          }
           if (
             frame.sheet.cols > 1 &&
             frame.dashboard.labelColumn === frame.dashboard.valueColumn
@@ -1429,6 +1563,10 @@
               frame.dashboard.labelColumn = fallback;
               updated = true;
             }
+          }
+          if (frame.dashboard.chartType !== 'line') {
+            frame.dashboard.chartType = 'line';
+            updated = true;
           }
         }
         if (isWeeklySalesFrame(frame)) {
@@ -1995,6 +2133,21 @@
             }
             return dataset;
           });
+          if (isYtdSalesFrame(frame) && isLine) {
+            datasets.forEach(function(dataset, idx) {
+              dataset.tension = 0.45;
+              dataset.pointRadius = idx === datasets.length - 1 ? 4 : 2;
+              dataset.pointHoverRadius = idx === datasets.length - 1 ? 6 : 4;
+            });
+            if (datasets.length >= 2) {
+              datasets[0].borderDash = [6, 4];
+              datasets[0].pointRadius = 0;
+              datasets[0].pointHoverRadius = 4;
+              datasets[datasets.length - 1].fill = true;
+              datasets[datasets.length - 1].backgroundColor = 'rgba(14, 165, 233, 0.18)';
+              datasets[datasets.length - 1].borderWidth = 2.5;
+            }
+          }
         } else {
           var values = data.map(function(entry) {
             return typeof entry.value === 'number' ? entry.value : null;
@@ -2097,6 +2250,50 @@
             return typeof value === 'number'
               ? value.toLocaleString(undefined, { maximumFractionDigits: 0 })
               : value;
+          };
+        }
+
+        if (isYtdSalesFrame(frame)) {
+          yScaleOptions.ticks.callback = function(value) {
+            return typeof value === 'number'
+              ? value.toLocaleString(undefined, { maximumFractionDigits: 0 })
+              : value;
+          };
+          yScaleOptions.afterBuildTicks = function(scale) {
+            var positiveStep = 5000;
+            var negativeStep = 10000;
+            var maxPositive = Math.max(scale.max, 0);
+            var minNegative = Math.min(scale.min, 0);
+            var ticks = [];
+            if (minNegative < 0) {
+              var negativeLimit = Math.floor(minNegative / negativeStep) * negativeStep;
+              for (var value = negativeLimit; value < 0; value += negativeStep) {
+                ticks.push(value);
+              }
+            }
+            if (!ticks.length || ticks[ticks.length - 1] !== 0) {
+              ticks.push(0);
+            }
+            if (maxPositive > 0) {
+              var positiveLimit = Math.ceil(maxPositive / positiveStep) * positiveStep;
+              for (var step = positiveStep; step <= positiveLimit; step += positiveStep) {
+                ticks.push(step);
+              }
+            }
+            if (ticks.length === 1 && ticks[0] === 0 && maxPositive <= 0) {
+              ticks.push(positiveStep);
+            }
+            if (ticks.length === 1 && ticks[0] === 0 && minNegative < 0) {
+              ticks.unshift(-negativeStep);
+            }
+            var lowest = ticks[0];
+            var highest = ticks[ticks.length - 1];
+            scale.min = typeof lowest === 'number' ? lowest : scale.min;
+            scale.max = typeof highest === 'number' ? highest : scale.max;
+            scale.ticks = ticks.map(function(tickValue) {
+              return { value: tickValue };
+            });
+            return scale.ticks;
           };
         }
 
@@ -2246,6 +2443,7 @@
         var diff = compare - base;
         var changeCard = document.createElement('div');
         changeCard.className = 'weekly-sales-card weekly-sales-card-delta';
+        changeCard.dataset.sign = diff < 0 ? 'negative' : diff > 0 ? 'positive' : 'zero';
         var changeLabel = document.createElement('span');
         changeLabel.className = 'weekly-sales-card-label';
         changeLabel.textContent = 'Change';
@@ -2255,7 +2453,7 @@
         var arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
         var percentChange = base !== 0 ? (diff / base) * 100 : null;
         var badge = document.createElement('span');
-        badge.className = 'weekly-sales-delta-badge';
+        badge.className = 'sales-delta-badge';
         badge.dataset.sign = diff < 0 ? 'negative' : diff > 0 ? 'positive' : 'zero';
         if (percentChange == null || !isFinite(percentChange)) {
           badge.textContent = arrow;
@@ -2271,6 +2469,117 @@
         changeCard.appendChild(changeValue);
         changeCard.appendChild(badge);
         summary.appendChild(changeCard);
+        return summary;
+      }
+
+      function buildYtdSalesSummary(entries, labels) {
+        if (!entries.length || labels.length < 2) return null;
+        var summary = document.createElement('div');
+        summary.className = 'ytd-sales-summary';
+        var totals = sumSeriesTotals(entries, labels.length);
+        var lastYearTotal = totals[0];
+        var currentTotal = totals[1];
+        var diff = currentTotal - lastYearTotal;
+        var percentChange = lastYearTotal !== 0 ? (diff / lastYearTotal) * 100 : null;
+
+        function createCard(className, label, valueText) {
+          var card = document.createElement('div');
+          card.className = className;
+          var labelEl = document.createElement('span');
+          labelEl.className = 'ytd-sales-card-label';
+          labelEl.textContent = label;
+          var valueEl = document.createElement('strong');
+          valueEl.className = 'ytd-sales-card-value';
+          valueEl.textContent = valueText;
+          card.appendChild(labelEl);
+          card.appendChild(valueEl);
+          return card;
+        }
+
+        var currentLabel = labels[1] || 'Current';
+        var lastYearLabel = labels[0] || 'Last Year';
+        summary.appendChild(
+          createCard(
+            'ytd-sales-card',
+            currentLabel,
+            currentTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })
+          )
+        );
+        summary.appendChild(
+          createCard(
+            'ytd-sales-card',
+            lastYearLabel,
+            lastYearTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })
+          )
+        );
+
+        var changeCard = document.createElement('div');
+        changeCard.className = 'ytd-sales-card ytd-sales-card-delta';
+        changeCard.dataset.sign = diff < 0 ? 'negative' : diff > 0 ? 'positive' : 'zero';
+        var changeLabel = document.createElement('span');
+        changeLabel.className = 'ytd-sales-card-label';
+        changeLabel.textContent = 'YTD Change';
+        var changeValue = document.createElement('strong');
+        changeValue.className = 'ytd-sales-card-value';
+        changeValue.textContent = (diff >= 0 ? '+' : '') + diff.toLocaleString(undefined, {
+          maximumFractionDigits: 2
+        });
+        var changeBadge = document.createElement('span');
+        changeBadge.className = 'sales-delta-badge';
+        changeBadge.dataset.sign = changeCard.dataset.sign;
+        if (percentChange == null || !isFinite(percentChange)) {
+          changeBadge.textContent = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+          changeBadge.setAttribute('aria-label', 'Change of ' + changeValue.textContent);
+        } else {
+          var arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+          changeBadge.textContent =
+            arrow + ' ' + (diff >= 0 ? '+' : '') + percentChange.toFixed(1) + '%';
+          changeBadge.setAttribute(
+            'aria-label',
+            'Change of ' + changeValue.textContent + ' (' + changeBadge.textContent + ')'
+          );
+        }
+        changeCard.appendChild(changeLabel);
+        changeCard.appendChild(changeValue);
+        changeCard.appendChild(changeBadge);
+        summary.appendChild(changeCard);
+
+        var bestEntry = null;
+        var bestDelta = null;
+        entries.forEach(function(entry, idx) {
+          if (!entry.values || entry.values.length < 2) return;
+          var previous = entry.values[0];
+          var current = entry.values[1];
+          if (typeof previous !== 'number' || typeof current !== 'number') return;
+          var delta = current - previous;
+          if (bestDelta == null || delta > bestDelta) {
+            bestDelta = delta;
+            bestEntry = { entry: entry, index: idx, delta: delta };
+          }
+        });
+
+        if (bestEntry && bestDelta != null) {
+          var liftCard = document.createElement('div');
+          liftCard.className = 'ytd-sales-card';
+          var liftSign = bestDelta < 0 ? 'negative' : bestDelta > 0 ? 'positive' : 'zero';
+          liftCard.dataset.sign = liftSign;
+          var liftLabel = document.createElement('span');
+          liftLabel.className = 'ytd-sales-card-label';
+          liftLabel.textContent = 'Top Lift vs Last Year';
+          var liftValue = document.createElement('strong');
+          liftValue.className = 'ytd-sales-card-value';
+          liftValue.textContent = (bestDelta >= 0 ? '+' : '') + bestDelta.toLocaleString(undefined, {
+            maximumFractionDigits: 2
+          });
+          var liftFootnote = document.createElement('span');
+          liftFootnote.className = 'sales-card-footnote';
+          liftFootnote.textContent = getEntrySummary(bestEntry.entry, bestEntry.index);
+          liftCard.appendChild(liftLabel);
+          liftCard.appendChild(liftValue);
+          liftCard.appendChild(liftFootnote);
+          summary.appendChild(liftCard);
+        }
+
         return summary;
       }
 
@@ -2405,10 +2714,25 @@
         var multiSeries = valueColumns.length > 1;
         var seriesLabels = getDashboardSeriesLabels(frame, valueColumns);
 
+        var summary = null;
+        if (entries.length && multiSeries && valueColumns.length >= 2) {
+          if (isWeeklySalesFrame(frame)) {
+            summary = buildWeeklySalesSummary(entries, seriesLabels);
+          } else if (isYtdSalesFrame(frame)) {
+            summary = buildYtdSalesSummary(entries, seriesLabels);
+          }
+        }
+        if (summary) {
+          container.appendChild(summary);
+        }
+
         var chartContainer = document.createElement('div');
         chartContainer.className = 'dashboard-chart';
         if (isWeeklySalesFrame(frame)) {
           chartContainer.classList.add('weekly-sales-chart');
+        }
+        if (isYtdSalesFrame(frame)) {
+          chartContainer.classList.add('ytd-sales-chart');
         }
         var canvas = document.createElement('canvas');
         chartContainer.appendChild(canvas);
