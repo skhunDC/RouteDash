@@ -888,6 +888,15 @@
         text-align: right;
         font-weight: 600;
         color: var(--brand-dark);
+        transition: color 0.2s ease;
+      }
+
+      .dashboard-list td.value[data-sign='negative'] {
+        color: #dc2626;
+      }
+
+      .dashboard-list td.value[data-sign='zero'] {
+        color: var(--text-secondary);
       }
 
       .dashboard-chart {
@@ -1598,46 +1607,155 @@
           };
         }
         var isLine = type === 'line';
-        var borderColor = '#2563eb';
-        var backgroundColor = isLine ? 'rgba(37, 99, 235, 0.18)' : '#38bdf8';
+        var minValue = values.length ? Math.min.apply(null, values) : 0;
+        var maxValue = values.length ? Math.max.apply(null, values) : 0;
+        var hasNegative = minValue < 0;
+        var hasPositive = maxValue > 0;
+        var maxAbs = Math.max(Math.abs(minValue), Math.abs(maxValue));
+        var padding = maxAbs ? maxAbs * 0.08 : 1;
+        var positiveStroke = '#2563eb';
+        var negativeStroke = '#dc2626';
+        var neutralStroke = '#94a3b8';
+
+        var datasetConfig = {
+          label: datasetLabel,
+          data: values,
+          tension: isLine ? 0.35 : 0,
+          fill: isLine,
+          pointRadius: isLine ? 3 : 0,
+          pointHoverRadius: isLine ? 4 : 0,
+          borderWidth: isLine ? 2 : 1.5
+        };
+
+        if (isLine) {
+          datasetConfig.borderColor = positiveStroke;
+          datasetConfig.backgroundColor = 'rgba(37, 99, 235, 0.18)';
+          datasetConfig.segment = {
+            borderColor: function(ctx) {
+              var target = ctx.p1.parsed.y;
+              return target < 0 ? negativeStroke : positiveStroke;
+            },
+            backgroundColor: function(ctx) {
+              var start = ctx.p0.parsed.y;
+              var end = ctx.p1.parsed.y;
+              if (start < 0 && end < 0) {
+                return 'rgba(248, 113, 113, 0.18)';
+              }
+              return 'rgba(37, 99, 235, 0.18)';
+            }
+          };
+          datasetConfig.pointBackgroundColor = function(ctx) {
+            var value = ctx.parsed.y;
+            if (value < 0) return negativeStroke;
+            if (value === 0) return neutralStroke;
+            return positiveStroke;
+          };
+          datasetConfig.pointBorderColor = datasetConfig.pointBackgroundColor;
+        } else {
+          var barPositiveFill = '#38bdf8';
+          var barNegativeFill = 'rgba(248, 113, 113, 0.78)';
+          var barNeutralFill = 'rgba(148, 163, 184, 0.55)';
+          datasetConfig.backgroundColor = values.map(function(v) {
+            if (v < 0) return barNegativeFill;
+            if (v === 0) return barNeutralFill;
+            return barPositiveFill;
+          });
+          datasetConfig.borderColor = values.map(function(v) {
+            if (v < 0) return negativeStroke;
+            if (v === 0) return neutralStroke;
+            return '#0284c7';
+          });
+          datasetConfig.hoverBackgroundColor = values.map(function(v) {
+            if (v < 0) return 'rgba(248, 113, 113, 0.9)';
+            if (v === 0) return 'rgba(148, 163, 184, 0.7)';
+            return '#0ea5e9';
+          });
+          datasetConfig.borderRadius = 6;
+        }
+
+        var yScaleOptions = {
+          beginAtZero: !(hasNegative && hasPositive),
+          suggestedMin: hasNegative ? minValue - padding : 0,
+          suggestedMax: hasPositive ? maxValue + padding : (!hasNegative && !hasPositive ? 1 : 0),
+          ticks: {
+            padding: 6,
+            color: 'rgba(15, 23, 42, 0.75)',
+            callback: function(value) {
+              return typeof value === 'number'
+                ? value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                : value;
+            }
+          },
+          grid: {
+            drawBorder: false,
+            tickLength: 0,
+            color: function(ctx) {
+              return ctx.tick.value === 0 ? 'rgba(15, 23, 42, 0.5)' : 'rgba(148, 163, 184, 0.22)';
+            },
+            lineWidth: function(ctx) {
+              return ctx.tick.value === 0 ? 1.6 : 1;
+            }
+          }
+        };
+
+        if (!hasNegative && !hasPositive) {
+          yScaleOptions.beginAtZero = true;
+          yScaleOptions.suggestedMin = 0;
+          yScaleOptions.suggestedMax = 1;
+        }
+
         return {
           type: type,
           data: {
             labels: labels,
-            datasets: [
-              {
-                label: datasetLabel,
-                data: values,
-                borderColor: borderColor,
-                backgroundColor: backgroundColor,
-                tension: isLine ? 0.35 : 0,
-                fill: isLine,
-                pointRadius: isLine ? 3 : 0,
-                pointBackgroundColor: borderColor,
-                borderWidth: 2
-              }
-            ]
+            datasets: [datasetConfig]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
             scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { precision: 0 }
-              },
+              y: yScaleOptions,
               x: {
                 ticks: {
                   autoSkip: false,
                   maxRotation: 50,
                   minRotation: 30,
                   padding: 6
+                },
+                grid: {
+                  drawBorder: false,
+                  tickLength: 0,
+                  color: 'rgba(148, 163, 184, 0.18)'
                 }
               }
             },
             plugins: {
-              legend: { display: true, position: 'bottom' },
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                  usePointStyle: isLine,
+                  padding: 16
+                }
+              },
               tooltip: {
+                callbacks: {
+                  title: function(context) {
+                    return context && context.length ? context[0].label : '';
+                  },
+                  label: function(context) {
+                    var datasetLabel = context.dataset && context.dataset.label ? context.dataset.label + ': ' : '';
+                    var rawValue = typeof context.raw === 'number' ? context.raw : context.parsed.y;
+                    if (typeof rawValue === 'number' && !isNaN(rawValue)) {
+                      return datasetLabel + rawValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                    }
+                    return datasetLabel + context.formattedValue;
+                  }
+                },
                 mode: 'index',
                 intersect: false
               }
@@ -1818,6 +1936,8 @@
             row.appendChild(labelCell);
             var valueCell = document.createElement('td');
             valueCell.className = 'value';
+            var sign = entry.value < 0 ? 'negative' : entry.value > 0 ? 'positive' : 'zero';
+            valueCell.dataset.sign = sign;
             valueCell.textContent = entry.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
             row.appendChild(valueCell);
             tbody.appendChild(row);
