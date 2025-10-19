@@ -964,6 +964,10 @@
         margin-top: 14px;
       }
 
+      .dashboard-chart.weekly-sales-chart {
+        height: 262.5px;
+      }
+
       .dashboard-chart canvas {
         width: 100% !important;
         height: 100% !important;
@@ -1945,8 +1949,18 @@
         var datasets;
         if (multiSeries) {
           var palette = buildColorPalette(valueColumns.length);
+          var weeklyOverrides = isWeeklySalesFrame(frame)
+            ? [
+                { border: '#2563eb', background: isLine ? 'rgba(37, 99, 235, 0.18)' : '#2563eb' },
+                { border: '#facc15', background: isLine ? 'rgba(250, 204, 21, 0.22)' : '#facc15' }
+              ]
+            : null;
           datasets = valueColumns.map(function(columnIndex, idx) {
-            var color = palette[idx % palette.length];
+            var paletteColor = palette[idx % palette.length];
+            var override = weeklyOverrides && weeklyOverrides[idx];
+            var borderColor = override ? override.border : paletteColor;
+            var backgroundColor = override ? override.background : paletteColor;
+            var hoverColor = override ? override.border : paletteColor;
             var seriesData = data.map(function(entry) {
               if (Array.isArray(entry.values) && entry.values.length > idx) {
                 var value = entry.values[idx];
@@ -1963,10 +1977,16 @@
               pointRadius: isLine ? 3 : 0,
               pointHoverRadius: isLine ? 4 : 0,
               borderWidth: isLine ? 2 : 1.5,
-              borderColor: color,
-              backgroundColor: isLine ? color : color,
-              hoverBackgroundColor: color
+              borderColor: borderColor,
+              backgroundColor: backgroundColor,
+              hoverBackgroundColor: hoverColor
             };
+            if (isLine) {
+              dataset.pointBackgroundColor = borderColor;
+              dataset.pointBorderColor = borderColor;
+              dataset.pointHoverBackgroundColor = borderColor;
+              dataset.pointHoverBorderColor = borderColor;
+            }
             if (isBar) {
               dataset.borderRadius = 8;
               dataset.maxBarThickness = 48;
@@ -2069,6 +2089,15 @@
           yScaleOptions.beginAtZero = true;
           yScaleOptions.suggestedMin = 0;
           yScaleOptions.suggestedMax = 1;
+        }
+
+        if (isWeeklySalesFrame(frame)) {
+          yScaleOptions.ticks.stepSize = 1;
+          yScaleOptions.ticks.callback = function(value) {
+            return typeof value === 'number'
+              ? value.toLocaleString(undefined, { maximumFractionDigits: 0 })
+              : value;
+          };
         }
 
         if (isYtdSalesFrame(frame) && isLine) {
@@ -2378,6 +2407,9 @@
 
         var chartContainer = document.createElement('div');
         chartContainer.className = 'dashboard-chart';
+        if (isWeeklySalesFrame(frame)) {
+          chartContainer.classList.add('weekly-sales-chart');
+        }
         var canvas = document.createElement('canvas');
         chartContainer.appendChild(canvas);
         container.appendChild(chartContainer);
