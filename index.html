@@ -899,6 +899,131 @@
         color: var(--text-secondary);
       }
 
+      .dashboard-list .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+
+      .comparison-table thead th {
+        padding: 10px 8px;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-align: right;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.16);
+        background: rgba(var(--brand-primary-rgb), 0.08);
+        color: var(--brand-dark);
+      }
+
+      .comparison-table thead th:first-child {
+        text-align: left;
+      }
+
+      .comparison-heading-delta {
+        min-width: 140px;
+      }
+
+      .comparison-table tbody td {
+        padding: 8px 6px;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      }
+
+      .comparison-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: left;
+      }
+
+      .comparison-value,
+      .comparison-delta {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+
+      .comparison-delta[data-sign='positive'] {
+        color: #047857;
+      }
+
+      .comparison-delta[data-sign='negative'] {
+        color: #b91c1c;
+      }
+
+      .comparison-delta[data-sign='zero'] {
+        color: var(--text-secondary);
+      }
+
+      .value-empty {
+        color: rgba(71, 85, 105, 0.65);
+        font-style: italic;
+      }
+
+      .weekly-sales-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin: 6px 0 18px;
+      }
+
+      .weekly-sales-card {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(var(--brand-secondary-rgb), 0.08), rgba(255, 255, 255, 0.92));
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      }
+
+      .weekly-sales-card-delta {
+        background: linear-gradient(135deg, rgba(var(--brand-accent), 0.12), rgba(255, 255, 255, 0.98));
+        border-color: rgba(var(--brand-accent), 0.32);
+      }
+
+      .weekly-sales-card-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(15, 23, 42, 0.62);
+      }
+
+      .weekly-sales-card-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .weekly-sales-delta-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 2px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(148, 163, 184, 0.18);
+        color: rgba(15, 23, 42, 0.78);
+      }
+
+      .weekly-sales-delta-badge[data-sign='positive'] {
+        background: rgba(34, 197, 94, 0.18);
+        color: #166534;
+      }
+
+      .weekly-sales-delta-badge[data-sign='negative'] {
+        background: rgba(239, 68, 68, 0.2);
+        color: #b91c1c;
+      }
+
+      .weekly-sales-delta-badge[data-sign='zero'] {
+        background: rgba(148, 163, 184, 0.22);
+        color: rgba(15, 23, 42, 0.62);
+      }
+
       .dashboard-chart {
         position: relative;
         height: 210px;
@@ -1258,7 +1383,8 @@
           labelColumn: 0,
           valueColumn: 1,
           visible: true,
-          sheetSize: 'balanced'
+          sheetSize: 'balanced',
+          comparisonColumns: null
         };
 
       }
@@ -1338,6 +1464,14 @@
         var allowedSizes = ['compact', 'balanced', 'expanded'];
         if (allowedSizes.indexOf(frame.dashboard.sheetSize) === -1) {
           frame.dashboard.sheetSize = 'balanced';
+          updated = true;
+        }
+
+        if (
+          frame.dashboard.comparisonColumns &&
+          !Array.isArray(frame.dashboard.comparisonColumns)
+        ) {
+          frame.dashboard.comparisonColumns = null;
           updated = true;
         }
 
@@ -1523,6 +1657,36 @@
           value = maxIndex;
           updated = true;
         }
+        var comparison = sanitizeComparisonColumns(frame, maxIndex);
+        var hasComparison = comparison.length > 1;
+        if (hasComparison) {
+          if (!arraysEqual(comparison, dashboard.comparisonColumns || [])) {
+            dashboard.comparisonColumns = comparison;
+            updated = true;
+          }
+          if (comparison.indexOf(value) === -1) {
+            value = comparison[0];
+            updated = true;
+          }
+          if (comparison.indexOf(label) !== -1) {
+            var labelFallback = 0;
+            while (labelFallback <= maxIndex && comparison.indexOf(labelFallback) !== -1) {
+              labelFallback++;
+            }
+            if (labelFallback > maxIndex) labelFallback = 0;
+            if (label !== labelFallback) {
+              label = labelFallback;
+              updated = true;
+            }
+          }
+        } else if (dashboard.comparisonColumns) {
+          dashboard.comparisonColumns = null;
+          if (comparison.length === 1 && dashboard.valueColumn !== comparison[0]) {
+            value = comparison[0];
+            updated = true;
+          }
+          updated = true;
+        }
         if (frame.sheet.cols > 1 && label === value) {
           var guess = guessDashboardColumns(frame);
           if (guess.label !== label) {
@@ -1576,7 +1740,10 @@
         evaluateSheet(sheet);
         ensureDashboardColumnBounds(frame);
         var labelIndex = frame.dashboard.labelColumn;
-        var valueIndex = frame.dashboard.valueColumn;
+        var valueColumns = getDashboardValueColumns(frame);
+        if (!valueColumns.length) {
+          valueColumns = [frame.dashboard.valueColumn];
+        }
         var entries = [];
         for (var r = 1; r < sheet.rows; r++) {
           var rowComputed = sheet.computed[r] || [];
@@ -1592,7 +1759,8 @@
           if (isNaN(numeric)) continue;
           var entry = {
             label: label,
-            value: numeric,
+            value: primaryValue,
+            values: values,
             row: r
           };
           var potentialDate = label || rowRaw[labelIndex];
@@ -1641,25 +1809,47 @@
 
       function buildChartConfig(frame, data) {
         var type = frame.dashboard.chartType || 'line';
+        var valueColumns = getDashboardValueColumns(frame);
+        if (!valueColumns.length) {
+          valueColumns = [frame.dashboard.valueColumn];
+        }
+        var multiSeries = valueColumns.length > 1;
+        if (multiSeries && type === 'pie') {
+          type = 'bar';
+        }
         var labels = data.map(function(entry, idx) {
           return getEntryAxisLabel(entry, idx);
         });
-        var values = data.map(function(entry) {
-          return entry.value;
+        var datasetLabels = getDashboardSeriesLabels(frame, valueColumns);
+        var allValues = [];
+        data.forEach(function(entry) {
+          var seriesValues = Array.isArray(entry.values) && entry.values.length
+            ? entry.values
+            : [entry.value];
+          seriesValues.forEach(function(value) {
+            if (typeof value === 'number' && isFinite(value)) {
+              allValues.push(value);
+            }
+          });
         });
-        var datasetLabel = getColumnHeader(frame.sheet, frame.dashboard.valueColumn);
-        if (!datasetLabel) {
-          datasetLabel = frame.title || 'Data';
-        }
-        if (type === 'pie') {
+        var minValue = allValues.length ? Math.min.apply(null, allValues) : 0;
+        var maxValue = allValues.length ? Math.max.apply(null, allValues) : 0;
+        var hasNegative = minValue < 0;
+        var hasPositive = maxValue > 0;
+        var maxAbs = Math.max(Math.abs(minValue), Math.abs(maxValue));
+        var padding = maxAbs ? maxAbs * 0.08 : 1;
+        var isLine = type === 'line';
+        var isBar = type === 'bar';
+
+        if (!multiSeries && type === 'pie') {
           return {
             type: 'pie',
             data: {
               labels: labels,
               datasets: [
                 {
-                  data: values,
-                  backgroundColor: buildColorPalette(values.length),
+                  data: allValues,
+                  backgroundColor: buildColorPalette(allValues.length),
                   borderColor: '#ffffff',
                   borderWidth: 1
                 }
@@ -1677,71 +1867,103 @@
             }
           };
         }
-        var isLine = type === 'line';
-        var minValue = values.length ? Math.min.apply(null, values) : 0;
-        var maxValue = values.length ? Math.max.apply(null, values) : 0;
-        var hasNegative = minValue < 0;
-        var hasPositive = maxValue > 0;
-        var maxAbs = Math.max(Math.abs(minValue), Math.abs(maxValue));
-        var padding = maxAbs ? maxAbs * 0.08 : 1;
-        var positiveStroke = '#2563eb';
-        var negativeStroke = '#dc2626';
-        var neutralStroke = '#94a3b8';
 
-        var datasetConfig = {
-          label: datasetLabel,
-          data: values,
-          tension: isLine ? 0.35 : 0,
-          fill: isLine,
-          pointRadius: isLine ? 3 : 0,
-          pointHoverRadius: isLine ? 4 : 0,
-          borderWidth: isLine ? 2 : 1.5
-        };
-
-        if (isLine) {
-          datasetConfig.borderColor = positiveStroke;
-          datasetConfig.backgroundColor = 'rgba(37, 99, 235, 0.18)';
-          datasetConfig.segment = {
-            borderColor: function(ctx) {
-              var target = ctx.p1.parsed.y;
-              return target < 0 ? negativeStroke : positiveStroke;
-            },
-            backgroundColor: function(ctx) {
-              var start = ctx.p0.parsed.y;
-              var end = ctx.p1.parsed.y;
-              if (start < 0 && end < 0) {
-                return 'rgba(248, 113, 113, 0.18)';
+        var datasets;
+        if (multiSeries) {
+          var palette = buildColorPalette(valueColumns.length);
+          datasets = valueColumns.map(function(columnIndex, idx) {
+            var color = palette[idx % palette.length];
+            var seriesData = data.map(function(entry) {
+              if (Array.isArray(entry.values) && entry.values.length > idx) {
+                var value = entry.values[idx];
+                return typeof value === 'number' && isFinite(value) ? value : null;
               }
-              return 'rgba(37, 99, 235, 0.18)';
+              var fallback = entry.value;
+              return typeof fallback === 'number' && isFinite(fallback) ? fallback : null;
+            });
+            var dataset = {
+              label: datasetLabels[idx],
+              data: seriesData,
+              tension: isLine ? 0.35 : 0,
+              fill: false,
+              pointRadius: isLine ? 3 : 0,
+              pointHoverRadius: isLine ? 4 : 0,
+              borderWidth: isLine ? 2 : 1.5,
+              borderColor: color,
+              backgroundColor: isLine ? color : color,
+              hoverBackgroundColor: color
+            };
+            if (isBar) {
+              dataset.borderRadius = 8;
+              dataset.maxBarThickness = 48;
+              dataset.categoryPercentage = 0.6;
+              dataset.barPercentage = 0.85;
             }
-          };
-          datasetConfig.pointBackgroundColor = function(ctx) {
-            var value = ctx.parsed.y;
-            if (value < 0) return negativeStroke;
-            if (value === 0) return neutralStroke;
-            return positiveStroke;
-          };
-          datasetConfig.pointBorderColor = datasetConfig.pointBackgroundColor;
+            return dataset;
+          });
         } else {
-          var barPositiveFill = '#38bdf8';
-          var barNegativeFill = 'rgba(248, 113, 113, 0.78)';
-          var barNeutralFill = 'rgba(148, 163, 184, 0.55)';
-          datasetConfig.backgroundColor = values.map(function(v) {
-            if (v < 0) return barNegativeFill;
-            if (v === 0) return barNeutralFill;
-            return barPositiveFill;
+          var values = data.map(function(entry) {
+            return typeof entry.value === 'number' ? entry.value : null;
           });
-          datasetConfig.borderColor = values.map(function(v) {
-            if (v < 0) return negativeStroke;
-            if (v === 0) return neutralStroke;
-            return '#0284c7';
-          });
-          datasetConfig.hoverBackgroundColor = values.map(function(v) {
-            if (v < 0) return 'rgba(248, 113, 113, 0.9)';
-            if (v === 0) return 'rgba(148, 163, 184, 0.7)';
-            return '#0ea5e9';
-          });
-          datasetConfig.borderRadius = 6;
+          var datasetLabel = datasetLabels[0] || frame.title || 'Data';
+          var positiveStroke = '#2563eb';
+          var negativeStroke = '#dc2626';
+          var neutralStroke = '#94a3b8';
+          var datasetConfig = {
+            label: datasetLabel,
+            data: values,
+            tension: isLine ? 0.35 : 0,
+            fill: isLine,
+            pointRadius: isLine ? 3 : 0,
+            pointHoverRadius: isLine ? 4 : 0,
+            borderWidth: isLine ? 2 : 1.5
+          };
+          if (isLine) {
+            datasetConfig.borderColor = positiveStroke;
+            datasetConfig.backgroundColor = 'rgba(37, 99, 235, 0.18)';
+            datasetConfig.segment = {
+              borderColor: function(ctx) {
+                var target = ctx.p1.parsed.y;
+                return target < 0 ? negativeStroke : positiveStroke;
+              },
+              backgroundColor: function(ctx) {
+                var start = ctx.p0.parsed.y;
+                var end = ctx.p1.parsed.y;
+                if (start < 0 && end < 0) {
+                  return 'rgba(248, 113, 113, 0.18)';
+                }
+                return 'rgba(37, 99, 235, 0.18)';
+              }
+            };
+            datasetConfig.pointBackgroundColor = function(ctx) {
+              var value = ctx.parsed.y;
+              if (value < 0) return negativeStroke;
+              if (value === 0) return neutralStroke;
+              return positiveStroke;
+            };
+            datasetConfig.pointBorderColor = datasetConfig.pointBackgroundColor;
+          } else if (isBar) {
+            var barPositiveFill = '#38bdf8';
+            var barNegativeFill = 'rgba(248, 113, 113, 0.78)';
+            var barNeutralFill = 'rgba(148, 163, 184, 0.55)';
+            datasetConfig.backgroundColor = values.map(function(v) {
+              if (v < 0) return barNegativeFill;
+              if (v === 0) return barNeutralFill;
+              return barPositiveFill;
+            });
+            datasetConfig.borderColor = values.map(function(v) {
+              if (v < 0) return negativeStroke;
+              if (v === 0) return neutralStroke;
+              return '#0284c7';
+            });
+            datasetConfig.hoverBackgroundColor = values.map(function(v) {
+              if (v < 0) return 'rgba(248, 113, 113, 0.9)';
+              if (v === 0) return 'rgba(148, 163, 184, 0.7)';
+              return '#0ea5e9';
+            });
+            datasetConfig.borderRadius = 6;
+          }
+          datasets = [datasetConfig];
         }
 
         var yScaleOptions = {
@@ -1813,7 +2035,7 @@
           type: type,
           data: {
             labels: labels,
-            datasets: [datasetConfig]
+            datasets: datasets
           },
           options: {
             responsive: true,
@@ -1871,6 +2093,69 @@
           return;
         }
         chartInstances[frame.id] = new Chart(canvas.getContext('2d'), buildChartConfig(frame, data));
+      }
+
+      function sumSeriesTotals(entries, seriesCount) {
+        var totals = new Array(seriesCount).fill(0);
+        entries.forEach(function(entry) {
+          for (var i = 0; i < seriesCount; i++) {
+            if (entry.values && typeof entry.values[i] === 'number') {
+              totals[i] += entry.values[i];
+            }
+          }
+        });
+        return totals;
+      }
+
+      function buildWeeklySalesSummary(entries, labels) {
+        if (!entries.length || labels.length < 2) return null;
+        var summary = document.createElement('div');
+        summary.className = 'weekly-sales-summary';
+        var totals = sumSeriesTotals(entries, labels.length);
+        labels.slice(0, 2).forEach(function(label, idx) {
+          var card = document.createElement('div');
+          card.className = 'weekly-sales-card';
+          var title = document.createElement('span');
+          title.className = 'weekly-sales-card-label';
+          title.textContent = label || 'Series ' + (idx + 1);
+          var value = document.createElement('strong');
+          value.className = 'weekly-sales-card-value';
+          value.textContent = totals[idx].toLocaleString(undefined, { maximumFractionDigits: 2 });
+          card.appendChild(title);
+          card.appendChild(value);
+          summary.appendChild(card);
+        });
+        var base = totals[0];
+        var compare = totals[1];
+        var diff = compare - base;
+        var changeCard = document.createElement('div');
+        changeCard.className = 'weekly-sales-card weekly-sales-card-delta';
+        var changeLabel = document.createElement('span');
+        changeLabel.className = 'weekly-sales-card-label';
+        changeLabel.textContent = 'Change';
+        var changeValue = document.createElement('strong');
+        changeValue.className = 'weekly-sales-card-value';
+        changeValue.textContent = (diff >= 0 ? '+' : '') + diff.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        var arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+        var percentChange = base !== 0 ? (diff / base) * 100 : null;
+        var badge = document.createElement('span');
+        badge.className = 'weekly-sales-delta-badge';
+        badge.dataset.sign = diff < 0 ? 'negative' : diff > 0 ? 'positive' : 'zero';
+        if (percentChange == null || !isFinite(percentChange)) {
+          badge.textContent = arrow;
+        } else {
+          badge.textContent = arrow + ' ' + (diff >= 0 ? '+' : '') + percentChange.toFixed(1) + '%';
+        }
+        var badgeLabel = 'Change of ' + changeValue.textContent;
+        if (!(percentChange == null || !isFinite(percentChange))) {
+          badgeLabel += ' (' + (diff >= 0 ? '+' : '') + percentChange.toFixed(1) + '%)';
+        }
+        badge.setAttribute('aria-label', badgeLabel);
+        changeCard.appendChild(changeLabel);
+        changeCard.appendChild(changeValue);
+        changeCard.appendChild(badge);
+        summary.appendChild(changeCard);
+        return summary;
       }
 
       function refreshDashboard(index) {
@@ -1996,6 +2281,20 @@
         container.appendChild(form);
 
         var entries = extractDashboardData(frame);
+        var valueColumns = getDashboardValueColumns(frame);
+        if (!valueColumns.length) {
+          valueColumns = [dashboard.valueColumn];
+        }
+        var multiSeries = valueColumns.length > 1;
+        var seriesLabels = getDashboardSeriesLabels(frame, valueColumns);
+
+        if (isWeeklySalesFrame(frame) && multiSeries) {
+          var summary = buildWeeklySalesSummary(entries, seriesLabels);
+          if (summary) {
+            summary.setAttribute('aria-label', 'Weekly sales comparison overview');
+            container.appendChild(summary);
+          }
+        }
 
         var chartContainer = document.createElement('div');
         chartContainer.className = 'dashboard-chart';
@@ -2021,18 +2320,89 @@
           dataWrapper.appendChild(empty);
         } else {
           var table = document.createElement('table');
+          if (multiSeries) {
+            table.classList.add('comparison-table');
+            var thead = document.createElement('thead');
+            var headRow = document.createElement('tr');
+            var labelHeader = document.createElement('th');
+            var labelHeaderText = getColumnHeader(sheet, dashboard.labelColumn);
+            labelHeader.textContent = labelHeaderText || 'Label';
+            headRow.appendChild(labelHeader);
+            seriesLabels.forEach(function(label) {
+              var th = document.createElement('th');
+              th.textContent = label || 'Series';
+              th.className = 'comparison-heading';
+              headRow.appendChild(th);
+            });
+            if (valueColumns.length === 2) {
+              var deltaHeader = document.createElement('th');
+              deltaHeader.textContent = 'Δ';
+              deltaHeader.className = 'comparison-heading comparison-heading-delta';
+              deltaHeader.setAttribute('title', 'Difference between columns');
+              headRow.appendChild(deltaHeader);
+            }
+            thead.appendChild(headRow);
+            table.appendChild(thead);
+          }
           var tbody = document.createElement('tbody');
           entries.forEach(function(entry, idx) {
             var row = document.createElement('tr');
             var labelCell = document.createElement('td');
             labelCell.textContent = getEntrySummary(entry, idx);
+            labelCell.className = 'comparison-label';
             row.appendChild(labelCell);
-            var valueCell = document.createElement('td');
-            valueCell.className = 'value';
-            var sign = entry.value < 0 ? 'negative' : entry.value > 0 ? 'positive' : 'zero';
-            valueCell.dataset.sign = sign;
-            valueCell.textContent = entry.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
-            row.appendChild(valueCell);
+            if (multiSeries) {
+              seriesLabels.forEach(function(label, seriesIdx) {
+                var valueCell = document.createElement('td');
+                valueCell.className = 'value comparison-value';
+                var seriesValue = entry.values && entry.values.length > seriesIdx ? entry.values[seriesIdx] : null;
+                if (typeof seriesValue === 'number' && isFinite(seriesValue)) {
+                  var seriesSign = seriesValue < 0 ? 'negative' : seriesValue > 0 ? 'positive' : 'zero';
+                  valueCell.dataset.sign = seriesSign;
+                  valueCell.textContent = seriesValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                } else {
+                  valueCell.dataset.sign = 'zero';
+                  valueCell.textContent = '—';
+                  valueCell.classList.add('value-empty');
+                }
+                row.appendChild(valueCell);
+              });
+              if (valueColumns.length === 2) {
+                var primary = entry.values && typeof entry.values[0] === 'number' ? entry.values[0] : null;
+                var comparison = entry.values && typeof entry.values[1] === 'number' ? entry.values[1] : null;
+                var deltaCell = document.createElement('td');
+                deltaCell.className = 'value comparison-delta';
+                if (typeof primary === 'number' && typeof comparison === 'number') {
+                  var delta = comparison - primary;
+                  var deltaSign = delta < 0 ? 'negative' : delta > 0 ? 'positive' : 'zero';
+                  deltaCell.dataset.sign = deltaSign;
+                  var deltaArrow = deltaSign === 'positive' ? '↑' : deltaSign === 'negative' ? '↓' : '→';
+                  var formattedDelta = (delta >= 0 ? '+' : '') + delta.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                  var percentDelta = primary !== 0 ? (delta / primary) * 100 : null;
+                  var percentText = percentDelta == null || !isFinite(percentDelta)
+                    ? ''
+                    : ' (' + (percentDelta >= 0 ? '+' : '') + percentDelta.toFixed(1) + '%)';
+                  deltaCell.textContent = formattedDelta + ' ' + deltaArrow + percentText;
+                  var deltaLabel = 'Change of ' + formattedDelta + ' ' + deltaArrow;
+                  if (percentText) {
+                    deltaLabel += ' ' + percentText.trim();
+                  }
+                  deltaCell.setAttribute('aria-label', deltaLabel);
+                } else {
+                  deltaCell.dataset.sign = 'zero';
+                  deltaCell.textContent = '—';
+                  deltaCell.classList.add('value-empty');
+                }
+                row.appendChild(deltaCell);
+              }
+            } else {
+              var valueCell = document.createElement('td');
+              valueCell.className = 'value';
+              var sign = entry.value < 0 ? 'negative' : entry.value > 0 ? 'positive' : 'zero';
+              valueCell.dataset.sign = sign;
+              valueCell.textContent = entry.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+              row.appendChild(valueCell);
+            }
             tbody.appendChild(row);
           });
           table.appendChild(tbody);
