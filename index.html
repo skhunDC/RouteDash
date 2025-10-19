@@ -964,6 +964,10 @@
         margin-top: 14px;
       }
 
+      .dashboard-chart.weekly-sales-chart {
+        height: 315px;
+      }
+
       .dashboard-chart canvas {
         width: 100% !important;
         height: 100% !important;
@@ -2071,6 +2075,15 @@
           yScaleOptions.suggestedMax = 1;
         }
 
+        if (isWeeklySalesFrame(frame)) {
+          yScaleOptions.ticks.stepSize = 1;
+          yScaleOptions.ticks.callback = function(value) {
+            return typeof value === 'number'
+              ? value.toLocaleString(undefined, { maximumFractionDigits: 0 })
+              : value;
+          };
+        }
+
         if (isYtdSalesFrame(frame) && isLine) {
           datasetConfig.pointRadius = 4;
           datasetConfig.pointHoverRadius = 6;
@@ -2378,6 +2391,9 @@
 
         var chartContainer = document.createElement('div');
         chartContainer.className = 'dashboard-chart';
+        if (isWeeklySalesFrame(frame)) {
+          chartContainer.classList.add('weekly-sales-chart');
+        }
         var canvas = document.createElement('canvas');
         chartContainer.appendChild(canvas);
         container.appendChild(chartContainer);
