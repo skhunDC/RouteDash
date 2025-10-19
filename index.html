@@ -2061,6 +2061,40 @@
           yScaleOptions.suggestedMax = 1;
         }
 
+        if (isYtdSalesFrame(frame) && isLine) {
+          datasetConfig.pointRadius = 4;
+          datasetConfig.pointHoverRadius = 6;
+          datasetConfig.tension = 0.45;
+        }
+
+        var xScaleOptions = {
+          ticks: {
+            autoSkip: false,
+            maxRotation: 50,
+            minRotation: 30,
+            padding: 6
+          },
+          grid: {
+            drawBorder: false,
+            tickLength: 0,
+            color: 'rgba(148, 163, 184, 0.18)'
+          }
+        };
+
+        if (isYtdSalesFrame(frame)) {
+          var visibleWindow = Math.min(8, labels.length);
+          if (labels.length > visibleWindow) {
+            xScaleOptions.min = labels.length - visibleWindow;
+            xScaleOptions.max = labels.length - 1;
+          }
+          xScaleOptions.offset = true;
+          xScaleOptions.ticks.maxRotation = 0;
+          xScaleOptions.ticks.minRotation = 0;
+          xScaleOptions.ticks.padding = 10;
+          xScaleOptions.ticks.font = { weight: '600', size: 13 };
+          xScaleOptions.grid.color = 'rgba(148, 163, 184, 0.12)';
+        }
+
         return {
           type: type,
           data: {
@@ -2136,6 +2170,69 @@
           return;
         }
         chartInstances[frame.id] = new Chart(canvas.getContext('2d'), buildChartConfig(frame, data));
+      }
+
+      function sumSeriesTotals(entries, seriesCount) {
+        var totals = new Array(seriesCount).fill(0);
+        entries.forEach(function(entry) {
+          for (var i = 0; i < seriesCount; i++) {
+            if (entry.values && typeof entry.values[i] === 'number') {
+              totals[i] += entry.values[i];
+            }
+          }
+        });
+        return totals;
+      }
+
+      function buildWeeklySalesSummary(entries, labels) {
+        if (!entries.length || labels.length < 2) return null;
+        var summary = document.createElement('div');
+        summary.className = 'weekly-sales-summary';
+        var totals = sumSeriesTotals(entries, labels.length);
+        labels.slice(0, 2).forEach(function(label, idx) {
+          var card = document.createElement('div');
+          card.className = 'weekly-sales-card';
+          var title = document.createElement('span');
+          title.className = 'weekly-sales-card-label';
+          title.textContent = label || 'Series ' + (idx + 1);
+          var value = document.createElement('strong');
+          value.className = 'weekly-sales-card-value';
+          value.textContent = totals[idx].toLocaleString(undefined, { maximumFractionDigits: 2 });
+          card.appendChild(title);
+          card.appendChild(value);
+          summary.appendChild(card);
+        });
+        var base = totals[0];
+        var compare = totals[1];
+        var diff = compare - base;
+        var changeCard = document.createElement('div');
+        changeCard.className = 'weekly-sales-card weekly-sales-card-delta';
+        var changeLabel = document.createElement('span');
+        changeLabel.className = 'weekly-sales-card-label';
+        changeLabel.textContent = 'Change';
+        var changeValue = document.createElement('strong');
+        changeValue.className = 'weekly-sales-card-value';
+        changeValue.textContent = (diff >= 0 ? '+' : '') + diff.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        var arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+        var percentChange = base !== 0 ? (diff / base) * 100 : null;
+        var badge = document.createElement('span');
+        badge.className = 'weekly-sales-delta-badge';
+        badge.dataset.sign = diff < 0 ? 'negative' : diff > 0 ? 'positive' : 'zero';
+        if (percentChange == null || !isFinite(percentChange)) {
+          badge.textContent = arrow;
+        } else {
+          badge.textContent = arrow + ' ' + (diff >= 0 ? '+' : '') + percentChange.toFixed(1) + '%';
+        }
+        var badgeLabel = 'Change of ' + changeValue.textContent;
+        if (!(percentChange == null || !isFinite(percentChange))) {
+          badgeLabel += ' (' + (diff >= 0 ? '+' : '') + percentChange.toFixed(1) + '%)';
+        }
+        badge.setAttribute('aria-label', badgeLabel);
+        changeCard.appendChild(changeLabel);
+        changeCard.appendChild(changeValue);
+        changeCard.appendChild(badge);
+        summary.appendChild(changeCard);
+        return summary;
       }
 
       function refreshDashboard(index) {
