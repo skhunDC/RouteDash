@@ -1403,69 +1403,6 @@
         return normalizeFrameTitle(frame.title) === 'ytd vs last year sales';
       }
 
-      function isWeeklySalesFrame(frame) {
-        if (!frame || !frame.title) return false;
-        var normalized = normalizeFrameTitle(frame.title);
-        return normalized === 'weekly sales' || normalized === 'weekly sales dashboard';
-      }
-
-      function arraysEqual(a, b) {
-        if (a === b) return true;
-        if (!Array.isArray(a) || !Array.isArray(b)) return false;
-        if (a.length !== b.length) return false;
-        for (var i = 0; i < a.length; i++) {
-          if (a[i] !== b[i]) return false;
-        }
-        return true;
-      }
-
-      function sanitizeComparisonColumns(frame, maxIndex) {
-        if (!frame || !frame.dashboard) return [];
-        var raw = Array.isArray(frame.dashboard.comparisonColumns)
-          ? frame.dashboard.comparisonColumns.slice()
-          : [];
-        var seen = {};
-        var sanitized = [];
-        raw.forEach(function(value) {
-          if (typeof value !== 'number' || isNaN(value)) return;
-          var numeric = Math.round(value);
-          if (numeric < 0) numeric = 0;
-          if (numeric > maxIndex) numeric = maxIndex;
-          if (!seen[numeric]) {
-            sanitized.push(numeric);
-            seen[numeric] = true;
-          }
-        });
-        return sanitized;
-      }
-
-      function getDashboardValueColumns(frame) {
-        if (!frame || !frame.dashboard) return [];
-        var comparison = Array.isArray(frame.dashboard.comparisonColumns)
-          ? frame.dashboard.comparisonColumns.filter(function(value) {
-              return typeof value === 'number' && !isNaN(value);
-            })
-          : [];
-        if (comparison.length) {
-          return comparison.slice();
-        }
-        if (typeof frame.dashboard.valueColumn === 'number' && !isNaN(frame.dashboard.valueColumn)) {
-          return [frame.dashboard.valueColumn];
-        }
-        return [];
-      }
-
-      function getDashboardSeriesLabels(frame, columns) {
-        var sheet = frame && frame.sheet ? frame.sheet : null;
-        return (columns || []).map(function(columnIndex, idx) {
-          var header = getColumnHeader(sheet, columnIndex);
-          if (header) return header;
-          var columnName = columnNameFromIndex(columnIndex);
-          if (columnName) return 'Column ' + columnName;
-          return 'Series ' + (idx + 1);
-        });
-      }
-
       function applyFrameSpecificOverrides(frame) {
         if (!frame || !frame.dashboard || !frame.sheet) return false;
         if (typeof frame.sheet.cols !== 'number' || frame.sheet.cols <= 0) return false;
@@ -1490,50 +1427,6 @@
               frame.dashboard.labelColumn = fallback;
               updated = true;
             }
-          }
-        }
-        if (isWeeklySalesFrame(frame)) {
-          var maxIdx = Math.max(0, frame.sheet.cols - 1);
-          var preferred = [1, 2].filter(function(index) {
-            return index <= maxIdx;
-          });
-          if (!preferred.length && maxIdx >= 0) {
-            preferred = [Math.min(1, maxIdx)];
-          }
-          if (preferred.length) {
-            if (!arraysEqual(frame.dashboard.comparisonColumns || [], preferred)) {
-              frame.dashboard.comparisonColumns = preferred;
-              updated = true;
-            }
-            if (frame.dashboard.valueColumn !== preferred[0]) {
-              frame.dashboard.valueColumn = preferred[0];
-              updated = true;
-            }
-            if (
-              frame.dashboard.labelColumn === frame.dashboard.valueColumn ||
-              preferred.indexOf(frame.dashboard.labelColumn) !== -1
-            ) {
-              var labelFallback = 0;
-              while (
-                labelFallback <= maxIdx &&
-                preferred.indexOf(labelFallback) !== -1
-              ) {
-                labelFallback++;
-              }
-              if (labelFallback > maxIdx) labelFallback = 0;
-              if (frame.dashboard.labelColumn !== labelFallback) {
-                frame.dashboard.labelColumn = labelFallback;
-                updated = true;
-              }
-            }
-          }
-          if (frame.dashboard.chartType !== 'bar') {
-            frame.dashboard.chartType = 'bar';
-            updated = true;
-          }
-          if (frame.dashboard.sheetSize !== 'expanded') {
-            frame.dashboard.sheetSize = 'expanded';
-            updated = true;
           }
         }
         return updated;
@@ -1813,14 +1706,6 @@
           dashboard.valueColumn = value;
           updated = true;
         }
-        if (hasComparison && !dashboard.comparisonColumns) {
-          dashboard.comparisonColumns = comparison;
-          updated = true;
-        }
-        if (!hasComparison && dashboard.comparisonColumns) {
-          dashboard.comparisonColumns = null;
-          updated = true;
-        }
         if (applyFrameSpecificOverrides(frame)) {
           updated = true;
         }
@@ -1868,25 +1753,10 @@
             labelValue = rowRaw[labelIndex];
           }
           var label = labelValue == null ? '' : String(labelValue).trim();
-          var values = [];
-          var primaryValue = null;
-          var hasValid = false;
-          for (var c = 0; c < valueColumns.length; c++) {
-            var columnIndex = valueColumns[c];
-            var valueRaw = rowComputed[columnIndex];
-            if (valueRaw == null || valueRaw === '') valueRaw = rowRaw[columnIndex];
-            var numeric = parseNumericValue(valueRaw);
-            if (isNaN(numeric)) {
-              values.push(null);
-              continue;
-            }
-            values.push(numeric);
-            hasValid = true;
-            if (primaryValue == null) {
-              primaryValue = numeric;
-            }
-          }
-          if (!hasValid || primaryValue == null) continue;
+          var valueRaw = rowComputed[valueIndex];
+          if (valueRaw == null || valueRaw === '') valueRaw = rowRaw[valueIndex];
+          var numeric = parseNumericValue(valueRaw);
+          if (isNaN(numeric)) continue;
           var entry = {
             label: label,
             value: primaryValue,
@@ -2127,6 +1997,40 @@
           yScaleOptions.suggestedMax = 1;
         }
 
+        if (isYtdSalesFrame(frame) && isLine) {
+          datasetConfig.pointRadius = 4;
+          datasetConfig.pointHoverRadius = 6;
+          datasetConfig.tension = 0.45;
+        }
+
+        var xScaleOptions = {
+          ticks: {
+            autoSkip: false,
+            maxRotation: 50,
+            minRotation: 30,
+            padding: 6
+          },
+          grid: {
+            drawBorder: false,
+            tickLength: 0,
+            color: 'rgba(148, 163, 184, 0.18)'
+          }
+        };
+
+        if (isYtdSalesFrame(frame)) {
+          var visibleWindow = Math.min(8, labels.length);
+          if (labels.length > visibleWindow) {
+            xScaleOptions.min = labels.length - visibleWindow;
+            xScaleOptions.max = labels.length - 1;
+          }
+          xScaleOptions.offset = true;
+          xScaleOptions.ticks.maxRotation = 0;
+          xScaleOptions.ticks.minRotation = 0;
+          xScaleOptions.ticks.padding = 10;
+          xScaleOptions.ticks.font = { weight: '600', size: 13 };
+          xScaleOptions.grid.color = 'rgba(148, 163, 184, 0.12)';
+        }
+
         return {
           type: type,
           data: {
@@ -2142,20 +2046,7 @@
             },
             scales: {
               y: yScaleOptions,
-              x: {
-                stacked: false,
-                ticks: {
-                  autoSkip: false,
-                  maxRotation: 50,
-                  minRotation: 30,
-                  padding: 6
-                },
-                grid: {
-                  drawBorder: false,
-                  tickLength: 0,
-                  color: 'rgba(148, 163, 184, 0.18)'
-                }
-              }
+              x: xScaleOptions
             },
             plugins: {
               legend: {
