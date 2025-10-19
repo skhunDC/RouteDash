@@ -1318,6 +1318,7 @@
           valueColumn: 1,
           visible: true,
           sheetSize: 'balanced',
+          sheetSizeManual: false,
           comparisonColumns: null
         };
 
@@ -1465,7 +1466,10 @@
             frame.dashboard.chartType = 'bar';
             updated = true;
           }
-          if (frame.dashboard.sheetSize !== 'expanded') {
+          if (
+            !frame.dashboard.sheetSizeManual &&
+            frame.dashboard.sheetSize !== 'expanded'
+          ) {
             frame.dashboard.sheetSize = 'expanded';
             updated = true;
           }
@@ -1505,6 +1509,12 @@
         var allowedSizes = ['compact', 'balanced', 'expanded'];
         if (allowedSizes.indexOf(frame.dashboard.sheetSize) === -1) {
           frame.dashboard.sheetSize = 'balanced';
+          frame.dashboard.sheetSizeManual = false;
+          updated = true;
+        }
+
+        if (typeof frame.dashboard.sheetSizeManual !== 'boolean') {
+          frame.dashboard.sheetSizeManual = false;
           updated = true;
         }
 
@@ -2349,6 +2359,7 @@
         sizeSelect.value = dashboard.sheetSize || 'balanced';
         sizeSelect.addEventListener('change', function() {
           dashboard.sheetSize = sizeSelect.value;
+          dashboard.sheetSizeManual = true;
           applyFrameLayout(container.closest('.frame'), frame);
           if (framesLoaded) saveFrames();
         });
