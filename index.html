@@ -1263,6 +1263,49 @@
 
       }
 
+      function normalizeFrameTitle(text) {
+        return text
+          ? text
+              .toLowerCase()
+              .replace(/\s+/g, ' ')
+              .trim()
+          : '';
+      }
+
+      function isYtdSalesFrame(frame) {
+        if (!frame || !frame.title) return false;
+        return normalizeFrameTitle(frame.title) === 'ytd vs last year sales';
+      }
+
+      function applyFrameSpecificOverrides(frame) {
+        if (!frame || !frame.dashboard || !frame.sheet) return false;
+        if (typeof frame.sheet.cols !== 'number' || frame.sheet.cols <= 0) return false;
+        var updated = false;
+        if (isYtdSalesFrame(frame)) {
+          var desiredValueIndex = 2;
+          var maxIndex = Math.max(0, frame.sheet.cols - 1);
+          if (frame.sheet.cols > desiredValueIndex && frame.dashboard.valueColumn !== desiredValueIndex) {
+            frame.dashboard.valueColumn = desiredValueIndex;
+            updated = true;
+          }
+          if (frame.sheet.cols <= desiredValueIndex && frame.dashboard.valueColumn > maxIndex) {
+            frame.dashboard.valueColumn = maxIndex;
+            updated = true;
+          }
+          if (
+            frame.sheet.cols > 1 &&
+            frame.dashboard.labelColumn === frame.dashboard.valueColumn
+          ) {
+            var fallback = frame.dashboard.valueColumn === 0 ? 1 : 0;
+            if (frame.dashboard.labelColumn !== fallback) {
+              frame.dashboard.labelColumn = fallback;
+              updated = true;
+            }
+          }
+        }
+        return updated;
+      }
+
       function ensureFrameMetadata(frame) {
         var updated = false;
         if (!frame.id) {
@@ -1300,6 +1343,9 @@
 
         if (frame.dashboard.hasOwnProperty('data')) {
           delete frame.dashboard.data;
+          updated = true;
+        }
+        if (applyFrameSpecificOverrides(frame)) {
           updated = true;
         }
         return updated;
@@ -1384,7 +1430,7 @@
               value = value.trim();
               if (value === '') continue;
             }
-            var numeric = typeof value === 'number' ? value : parseFloat(value);
+            var numeric = parseNumericValue(value);
             if (!isNaN(numeric) && isFinite(numeric)) {
               numericCounts[c]++;
             } else {
@@ -1496,7 +1542,32 @@
           dashboard.valueColumn = value;
           updated = true;
         }
+        if (applyFrameSpecificOverrides(frame)) {
+          updated = true;
+        }
         return updated;
+      }
+
+      function parseNumericValue(value) {
+        if (typeof value === 'number') {
+          return isFinite(value) ? value : NaN;
+        }
+        if (typeof value !== 'string') return NaN;
+        var text = value.trim();
+        if (!text) return NaN;
+        var negativeFromParens = false;
+        if (/^\(.+\)$/.test(text)) {
+          negativeFromParens = true;
+          text = text.slice(1, -1);
+        }
+        text = text
+          .replace(/[%,$]/g, '')
+          .replace(/\s+/g, '')
+          .replace(/,/g, '');
+        var numeric = parseFloat(text);
+        if (isNaN(numeric)) return NaN;
+        if (negativeFromParens) numeric = -numeric;
+        return numeric;
       }
 
       function extractDashboardData(frame) {
@@ -1517,7 +1588,7 @@
           var label = labelValue == null ? '' : String(labelValue).trim();
           var valueRaw = rowComputed[valueIndex];
           if (valueRaw == null || valueRaw === '') valueRaw = rowRaw[valueIndex];
-          var numeric = typeof valueRaw === 'number' ? valueRaw : parseFloat(valueRaw);
+          var numeric = parseNumericValue(valueRaw);
           if (isNaN(numeric)) continue;
           var entry = {
             label: label,
@@ -1704,6 +1775,40 @@
           yScaleOptions.suggestedMax = 1;
         }
 
+        if (isYtdSalesFrame(frame) && isLine) {
+          datasetConfig.pointRadius = 4;
+          datasetConfig.pointHoverRadius = 6;
+          datasetConfig.tension = 0.45;
+        }
+
+        var xScaleOptions = {
+          ticks: {
+            autoSkip: false,
+            maxRotation: 50,
+            minRotation: 30,
+            padding: 6
+          },
+          grid: {
+            drawBorder: false,
+            tickLength: 0,
+            color: 'rgba(148, 163, 184, 0.18)'
+          }
+        };
+
+        if (isYtdSalesFrame(frame)) {
+          var visibleWindow = Math.min(8, labels.length);
+          if (labels.length > visibleWindow) {
+            xScaleOptions.min = labels.length - visibleWindow;
+            xScaleOptions.max = labels.length - 1;
+          }
+          xScaleOptions.offset = true;
+          xScaleOptions.ticks.maxRotation = 0;
+          xScaleOptions.ticks.minRotation = 0;
+          xScaleOptions.ticks.padding = 10;
+          xScaleOptions.ticks.font = { weight: '600', size: 13 };
+          xScaleOptions.grid.color = 'rgba(148, 163, 184, 0.12)';
+        }
+
         return {
           type: type,
           data: {
@@ -1719,19 +1824,7 @@
             },
             scales: {
               y: yScaleOptions,
-              x: {
-                ticks: {
-                  autoSkip: false,
-                  maxRotation: 50,
-                  minRotation: 30,
-                  padding: 6
-                },
-                grid: {
-                  drawBorder: false,
-                  tickLength: 0,
-                  color: 'rgba(148, 163, 184, 0.18)'
-                }
-              }
+              x: xScaleOptions
             },
             plugins: {
               legend: {
