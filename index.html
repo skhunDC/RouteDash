@@ -964,6 +964,10 @@
         margin-top: 14px;
       }
 
+      .dashboard-chart.dashboard-chart-tall {
+        height: 315px;
+      }
+
       .dashboard-chart canvas {
         width: 100% !important;
         height: 100% !important;
@@ -2071,6 +2075,68 @@
           yScaleOptions.suggestedMax = 1;
         }
 
+        if (isYtdSalesFrame(frame)) {
+          var positiveStep = 5;
+          var negativeStep = 10;
+          var positiveUpperBound = hasPositive
+            ? Math.ceil(maxValue / positiveStep) * positiveStep
+            : 0;
+          var negativeLowerBound = hasNegative
+            ? Math.floor(minValue / negativeStep) * negativeStep
+            : 0;
+          if (!hasPositive && !hasNegative) {
+            positiveUpperBound = positiveStep;
+          }
+          yScaleOptions.beginAtZero = false;
+          yScaleOptions.suggestedMin = undefined;
+          yScaleOptions.suggestedMax = undefined;
+          yScaleOptions.min = negativeLowerBound;
+          yScaleOptions.max = positiveUpperBound;
+          var formatTickValue = yScaleOptions.ticks.callback;
+          yScaleOptions.afterBuildTicks = function(scale) {
+            var negativeTicks = [];
+            if (negativeLowerBound < 0) {
+              for (
+                var neg = -negativeStep;
+                neg >= negativeLowerBound;
+                neg -= negativeStep
+              ) {
+                negativeTicks.push({ value: neg });
+              }
+              negativeTicks.reverse();
+            }
+            var positiveTicks = [];
+            if (positiveUpperBound > 0) {
+              for (
+                var pos = positiveStep;
+                pos <= positiveUpperBound;
+                pos += positiveStep
+              ) {
+                positiveTicks.push({ value: pos });
+              }
+            }
+            var combinedTicks = negativeTicks.concat([{ value: 0 }], positiveTicks);
+            if (!negativeTicks.length && negativeLowerBound < 0) {
+              combinedTicks.unshift({ value: negativeLowerBound });
+            }
+            if (!positiveTicks.length && positiveUpperBound > 0) {
+              combinedTicks.push({ value: positiveUpperBound });
+            }
+            if (!combinedTicks.length) {
+              combinedTicks = [{ value: 0 }];
+            }
+            scale.ticks = combinedTicks;
+            if (combinedTicks.length) {
+              scale.min = combinedTicks[0].value;
+              scale.max = combinedTicks[combinedTicks.length - 1].value;
+            }
+            return combinedTicks;
+          };
+          yScaleOptions.ticks.callback = function(value) {
+            return formatTickValue ? formatTickValue(value) : value;
+          };
+        }
+
         if (isYtdSalesFrame(frame) && isLine) {
           datasetConfig.pointRadius = 4;
           datasetConfig.pointHoverRadius = 6;
@@ -2378,6 +2444,9 @@
 
         var chartContainer = document.createElement('div');
         chartContainer.className = 'dashboard-chart';
+        if (isYtdSalesFrame(frame)) {
+          chartContainer.className += ' dashboard-chart-tall';
+        }
         var canvas = document.createElement('canvas');
         chartContainer.appendChild(canvas);
         container.appendChild(chartContainer);
