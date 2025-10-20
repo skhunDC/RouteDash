@@ -964,10 +964,6 @@
         margin-top: 14px;
       }
 
-      .dashboard-chart.weekly-sales-chart {
-        height: 262.5px;
-      }
-
       .dashboard-chart canvas {
         width: 100% !important;
         height: 100% !important;
@@ -1892,7 +1888,6 @@
           valueColumns = [frame.dashboard.valueColumn];
         }
         var multiSeries = valueColumns.length > 1;
-        var weeklyFrame = isWeeklySalesFrame(frame);
         if (multiSeries && type === 'pie') {
           type = 'bar';
         }
@@ -1950,18 +1945,8 @@
         var datasets;
         if (multiSeries) {
           var palette = buildColorPalette(valueColumns.length);
-          var weeklyOverrides = weeklyFrame
-            ? [
-                { border: '#2563eb', background: isLine ? 'rgba(37, 99, 235, 0.18)' : '#2563eb' },
-                { border: '#facc15', background: isLine ? 'rgba(250, 204, 21, 0.22)' : '#facc15' }
-              ]
-            : null;
           datasets = valueColumns.map(function(columnIndex, idx) {
-            var paletteColor = palette[idx % palette.length];
-            var override = weeklyOverrides && weeklyOverrides[idx];
-            var borderColor = override ? override.border : paletteColor;
-            var backgroundColor = override ? override.background : paletteColor;
-            var hoverColor = override ? override.border : paletteColor;
+            var color = palette[idx % palette.length];
             var seriesData = data.map(function(entry) {
               if (Array.isArray(entry.values) && entry.values.length > idx) {
                 var value = entry.values[idx];
@@ -1978,16 +1963,10 @@
               pointRadius: isLine ? 3 : 0,
               pointHoverRadius: isLine ? 4 : 0,
               borderWidth: isLine ? 2 : 1.5,
-              borderColor: borderColor,
-              backgroundColor: backgroundColor,
-              hoverBackgroundColor: hoverColor
+              borderColor: color,
+              backgroundColor: isLine ? color : color,
+              hoverBackgroundColor: color
             };
-            if (isLine) {
-              dataset.pointBackgroundColor = borderColor;
-              dataset.pointBorderColor = borderColor;
-              dataset.pointHoverBackgroundColor = borderColor;
-              dataset.pointHoverBorderColor = borderColor;
-            }
             if (isBar) {
               dataset.borderRadius = 8;
               dataset.maxBarThickness = 48;
@@ -2092,27 +2071,6 @@
           yScaleOptions.suggestedMax = 1;
         }
 
-        if (weeklyFrame) {
-          var weeklyMin = hasNegative ? minValue - padding : 0;
-          var weeklyMax = maxValue + padding;
-          var tickStep = determineTickStep(weeklyMin, weeklyMax, 6);
-          if (!tickStep || !isFinite(tickStep) || tickStep <= 0) {
-            tickStep = 1;
-          }
-          yScaleOptions.ticks.stepSize = tickStep;
-          if (hasNegative) {
-            yScaleOptions.suggestedMin = Math.floor(weeklyMin / tickStep) * tickStep;
-          } else {
-            yScaleOptions.suggestedMin = 0;
-          }
-          yScaleOptions.suggestedMax = Math.ceil(weeklyMax / tickStep) * tickStep;
-          yScaleOptions.ticks.callback = function(value) {
-            return typeof value === 'number'
-              ? value.toLocaleString(undefined, { maximumFractionDigits: 0 })
-              : value;
-          };
-        }
-
         if (isYtdSalesFrame(frame) && isLine) {
           datasetConfig.pointRadius = 4;
           datasetConfig.pointHoverRadius = 6;
@@ -2195,8 +2153,7 @@
                     var datasetLabel = context.dataset && context.dataset.label ? context.dataset.label + ': ' : '';
                     var rawValue = typeof context.raw === 'number' ? context.raw : context.parsed.y;
                     if (typeof rawValue === 'number' && !isNaN(rawValue)) {
-                      var decimals = weeklyFrame ? 0 : 2;
-                      return datasetLabel + rawValue.toLocaleString(undefined, { maximumFractionDigits: decimals });
+                      return datasetLabel + rawValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
                     }
                     return datasetLabel + context.formattedValue;
                   }
@@ -2237,37 +2194,6 @@
         return totals;
       }
 
-      function niceNumber(range, round) {
-        if (!range || !isFinite(range)) return 0;
-        var exponent = Math.floor(Math.log10(range));
-        var fraction = range / Math.pow(10, exponent);
-        var niceFraction;
-        if (round) {
-          if (fraction < 1.5) niceFraction = 1;
-          else if (fraction < 3) niceFraction = 2;
-          else if (fraction < 7) niceFraction = 5;
-          else niceFraction = 10;
-        } else {
-          if (fraction <= 1) niceFraction = 1;
-          else if (fraction <= 2) niceFraction = 2;
-          else if (fraction <= 5) niceFraction = 5;
-          else niceFraction = 10;
-        }
-        return niceFraction * Math.pow(10, exponent);
-      }
-
-      function determineTickStep(minValue, maxValue, desiredTickCount) {
-        if (!isFinite(minValue)) minValue = 0;
-        if (!isFinite(maxValue)) maxValue = 0;
-        if (desiredTickCount == null || desiredTickCount < 2) desiredTickCount = 6;
-        var span = maxValue - minValue;
-        if (span <= 0) return 1;
-        var niceRange = niceNumber(span, false);
-        var step = niceNumber(niceRange / (desiredTickCount - 1), true);
-        if (!step || !isFinite(step) || step <= 0) return 1;
-        return step;
-      }
-
       function buildWeeklySalesSummary(entries, labels) {
         if (!entries.length || labels.length < 2) return null;
         var summary = document.createElement('div');
@@ -2281,7 +2207,7 @@
           title.textContent = label || 'Series ' + (idx + 1);
           var value = document.createElement('strong');
           value.className = 'weekly-sales-card-value';
-          value.textContent = totals[idx].toLocaleString(undefined, { maximumFractionDigits: 0 });
+          value.textContent = totals[idx].toLocaleString(undefined, { maximumFractionDigits: 2 });
           card.appendChild(title);
           card.appendChild(value);
           summary.appendChild(card);
@@ -2296,7 +2222,7 @@
         changeLabel.textContent = 'Change';
         var changeValue = document.createElement('strong');
         changeValue.className = 'weekly-sales-card-value';
-        changeValue.textContent = (diff >= 0 ? '+' : '') + diff.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        changeValue.textContent = (diff >= 0 ? '+' : '') + diff.toLocaleString(undefined, { maximumFractionDigits: 2 });
         var arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
         var percentChange = base !== 0 ? (diff / base) * 100 : null;
         var badge = document.createElement('span');
@@ -2448,17 +2374,10 @@
           valueColumns = [dashboard.valueColumn];
         }
         var multiSeries = valueColumns.length > 1;
-        var weeklyFrame = isWeeklySalesFrame(frame);
         var seriesLabels = getDashboardSeriesLabels(frame, valueColumns);
-        var numberFormatOptions = weeklyFrame
-          ? { maximumFractionDigits: 0 }
-          : { maximumFractionDigits: 2 };
 
         var chartContainer = document.createElement('div');
         chartContainer.className = 'dashboard-chart';
-        if (weeklyFrame) {
-          chartContainer.classList.add('weekly-sales-chart');
-        }
         var canvas = document.createElement('canvas');
         chartContainer.appendChild(canvas);
         container.appendChild(chartContainer);
@@ -2520,7 +2439,7 @@
                 if (typeof seriesValue === 'number' && isFinite(seriesValue)) {
                   var seriesSign = seriesValue < 0 ? 'negative' : seriesValue > 0 ? 'positive' : 'zero';
                   valueCell.dataset.sign = seriesSign;
-                  valueCell.textContent = seriesValue.toLocaleString(undefined, numberFormatOptions);
+                  valueCell.textContent = seriesValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
                 } else {
                   valueCell.dataset.sign = 'zero';
                   valueCell.textContent = '—';
@@ -2538,7 +2457,7 @@
                   var deltaSign = delta < 0 ? 'negative' : delta > 0 ? 'positive' : 'zero';
                   deltaCell.dataset.sign = deltaSign;
                   var deltaArrow = deltaSign === 'positive' ? '↑' : deltaSign === 'negative' ? '↓' : '→';
-                  var formattedDelta = (delta >= 0 ? '+' : '') + delta.toLocaleString(undefined, numberFormatOptions);
+                  var formattedDelta = (delta >= 0 ? '+' : '') + delta.toLocaleString(undefined, { maximumFractionDigits: 2 });
                   var percentDelta = primary !== 0 ? (delta / primary) * 100 : null;
                   var percentText = percentDelta == null || !isFinite(percentDelta)
                     ? ''
@@ -2561,7 +2480,7 @@
               valueCell.className = 'value';
               var sign = entry.value < 0 ? 'negative' : entry.value > 0 ? 'positive' : 'zero';
               valueCell.dataset.sign = sign;
-              valueCell.textContent = entry.value.toLocaleString(undefined, numberFormatOptions);
+              valueCell.textContent = entry.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
               row.appendChild(valueCell);
             }
             tbody.appendChild(row);
