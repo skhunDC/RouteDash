@@ -63,6 +63,26 @@ function saveFrames(frames) {
   PropertiesService.getScriptProperties().setProperty('frames', JSON.stringify(frames));
 }
 
+function getFloatingLayouts() {
+  var props = PropertiesService.getScriptProperties();
+  var data = props.getProperty('floatingLayouts');
+  if (!data) return {};
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveFloatingLayouts(layouts) {
+  var props = PropertiesService.getScriptProperties();
+  if (!layouts || typeof layouts !== 'object') {
+    props.deleteProperty('floatingLayouts');
+    return;
+  }
+  props.setProperty('floatingLayouts', JSON.stringify(layouts));
+}
+
 function getDriverOfTheWeek() {
   var props = PropertiesService.getScriptProperties();
   return props.getProperty('driverOfWeek') || '';
