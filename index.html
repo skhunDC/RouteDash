@@ -289,8 +289,8 @@
 
       .main-layout {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
-        gap: 24px;
+        grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 560px);
+        gap: clamp(20px, 2.8vw, 40px);
         flex: 1 1 auto;
         align-items: stretch;
         min-height: 0;
@@ -446,8 +446,9 @@
       .sidebar-card.driver-carousel {
         flex: 1 1 auto;
         height: 100%;
-        padding: 30px;
-        gap: 24px;
+        padding: clamp(28px, 3vw, 48px);
+        gap: clamp(24px, 2.8vw, 40px);
+        min-height: clamp(420px, 60vh, 820px);
       }
 
       .sidebar-card::before {
@@ -527,27 +528,115 @@
       }
 
       .driver-carousel {
-        gap: 24px;
+        gap: clamp(20px, 2.6vw, 36px);
+      }
+
+      .driver-carousel .spotlight-header {
+        display: grid;
+        gap: 12px;
+        align-items: flex-start;
+        padding-bottom: clamp(16px, 2.2vw, 28px);
+        border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.15);
       }
 
       .driver-carousel .card-header {
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+        padding-bottom: 0;
+        border-bottom: none;
+        gap: 10px;
+      }
+
+      .driver-carousel .card-header h2 {
+        font-size: clamp(1.4rem, 2.4vw, 2.3rem);
+        letter-spacing: -0.01em;
+      }
+
+      .driver-carousel .card-subtitle {
+        font-size: clamp(1rem, 1.3vw, 1.18rem);
+        color: rgba(var(--brand-primary-rgb), 0.8);
+        max-width: 32ch;
+      }
+
+      .driver-carousel .spotlight-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(var(--brand-primary-rgb), 0.12);
+        color: var(--brand-primary);
+        font-weight: 600;
+        font-size: clamp(0.75rem, 1.1vw, 0.95rem);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      .driver-carousel .spotlight-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-start;
+        text-align: left;
+        color: var(--text-secondary);
+      }
+
+      .driver-carousel .spotlight-count {
+        font-size: clamp(1.05rem, 1.6vw, 1.5rem);
+        font-weight: 600;
+        color: var(--brand-dark);
+      }
+
+      .driver-carousel .spotlight-status {
+        font-size: clamp(0.9rem, 1.2vw, 1.08rem);
+        line-height: 1.4;
+      }
+
+      .driver-carousel .spotlight-meta.is-empty .spotlight-count {
+        color: var(--text-secondary);
+      }
+
+      .driver-carousel .spotlight-meta.is-empty .spotlight-status {
+        color: rgba(var(--brand-primary-rgb), 0.75);
+      }
+
+      @media (min-width: 1200px) {
+        .driver-carousel .spotlight-header {
+          grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+          align-items: end;
+        }
+
+        .driver-carousel .spotlight-meta {
+          align-items: flex-end;
+          text-align: right;
+        }
+      }
+
+      @media (min-width: 1600px) {
+        .main-layout {
+          grid-template-columns: minmax(0, 1fr) clamp(440px, 30vw, 700px);
+        }
+
+        .sidebar-card.driver-carousel {
+          min-height: clamp(560px, 68vh, 920px);
+        }
+
+        .driver-carousel .spotlight-header {
+          grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        }
       }
 
       .carousel-window {
         position: relative;
         flex: 1 1 auto;
         min-height: 0;
-        border-radius: 26px;
-        background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(var(--brand-secondary-rgb), 0.24));
-        border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
-        padding: 28px 32px;
+        border-radius: clamp(26px, 3vw, 48px);
+        background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(var(--brand-secondary-rgb), 0.34));
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
+        padding: clamp(24px, 3vw, 56px) clamp(24px, 3vw, 60px);
         overflow: hidden;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 34px 64px -32px rgba(15, 23, 42, 0.48);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 38px 80px -34px rgba(15, 23, 42, 0.5);
         transition: height 0.35s ease;
         contain: layout paint;
-        display: flex;
       }
 
       .carousel-window::before,
@@ -556,19 +645,19 @@
         position: absolute;
         left: 0;
         right: 0;
-        height: 120px;
+        height: clamp(120px, 18vh, 220px);
         pointer-events: none;
         z-index: 2;
       }
 
       .carousel-window::before {
         top: 0;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
       }
 
       .carousel-window::after {
         bottom: 0;
-        background: linear-gradient(0deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+        background: linear-gradient(0deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
       }
 
       .carousel-window.is-transitioning {
@@ -578,16 +667,16 @@
       .carousel-track {
         position: absolute;
         inset: 0;
-        padding: 0 6px;
+        padding: 0 clamp(8px, 1.6vw, 28px);
         display: flex;
         flex-direction: column;
-        gap: 32px;
+        gap: clamp(32px, 4vw, 64px);
         align-items: center;
-        --carousel-speed: 24s;
+        --carousel-speed: 28s;
         transition: opacity 0.55s ease;
         opacity: 0;
         transform: translateY(-50%);
-        animation: scroll-down var(--carousel-speed, 24s) linear infinite;
+        animation: scroll-down var(--carousel-speed, 28s) linear infinite;
         animation-play-state: paused;
       }
 
@@ -627,22 +716,34 @@
 
       .carousel-item {
         position: relative;
-        border-radius: 24px;
+        border-radius: clamp(28px, 3.2vw, 48px);
         overflow: hidden;
-        box-shadow: 0 30px 48px -26px rgba(15, 23, 42, 0.55), 0 22px 36px -28px rgba(var(--brand-primary-rgb), 0.35);
-        background: rgba(15, 23, 42, 0.35);
+        box-shadow: 0 38px 80px -36px rgba(15, 23, 42, 0.6), 0 30px 56px -34px rgba(var(--brand-primary-rgb), 0.38);
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.16);
         isolation: isolate;
-        width: min(100%, 340px);
-        aspect-ratio: 3 / 4;
+        width: clamp(320px, 24vw, 540px);
+        aspect-ratio: 4 / 5;
         margin: 0 auto;
         display: flex;
+      }
+
+      .carousel-item::before {
+        content: '';
+        position: absolute;
+        inset: clamp(12px, 1.2vw, 22px);
+        border-radius: inherit;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        z-index: 1;
       }
 
       .carousel-item::after {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.4));
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0.5));
         opacity: 0;
         transition: opacity 0.35s ease;
         pointer-events: none;
@@ -653,6 +754,10 @@
         opacity: 1;
       }
 
+      .carousel-item:hover::before {
+        opacity: 1;
+      }
+
       .driver-carousel img {
         display: block;
         width: 100%;
@@ -660,12 +765,14 @@
         min-height: 100%;
         object-fit: cover;
         object-position: center;
-        filter: saturate(1.05);
-        transition: transform 0.6s ease;
+        border-radius: inherit;
+        filter: saturate(1.05) contrast(1.02);
+        transition: transform 0.6s ease, filter 0.6s ease;
       }
 
       .carousel-item:hover img {
-        transform: scale(1.04);
+        transform: scale(1.05);
+        filter: saturate(1.1) contrast(1.05);
       }
 
       #loading-overlay {
@@ -1173,6 +1280,20 @@
 
         .sidebar-card {
           flex: 1 1 280px;
+        }
+
+        .sidebar-card.driver-carousel {
+          min-height: 360px;
+          padding: 24px;
+        }
+
+        .driver-carousel .spotlight-header {
+          grid-template-columns: 1fr;
+        }
+
+        .driver-carousel .spotlight-meta {
+          align-items: flex-start;
+          text-align: left;
         }
       }
 
@@ -3500,6 +3621,34 @@
           images = shuffle(images);
         }
         driverImages = images;
+        updateSpotlightMeta();
+      }
+
+      function updateSpotlightMeta() {
+        var meta = document.getElementById('carousel-meta');
+        var countEl = document.getElementById('carousel-count');
+        var statusEl = document.getElementById('carousel-status');
+        if (!countEl) return;
+        var count = driverImages.length;
+        if (meta) {
+          meta.classList.toggle('is-empty', count === 0);
+        }
+        if (count === 0) {
+          countEl.textContent = 'No spotlight photos yet';
+          if (statusEl) {
+            statusEl.textContent = 'Upload driver images to start the rotation.';
+          }
+        } else if (count === 1) {
+          countEl.textContent = 'Showing 1 driver photo';
+          if (statusEl) {
+            statusEl.textContent = 'Add more images to create a rotating spotlight.';
+          }
+        } else {
+          countEl.textContent = 'Rotating ' + count + ' driver photos';
+          if (statusEl) {
+            statusEl.textContent = 'Images advance automatically for the big screen display.';
+          }
+        }
       }
 
       function preloadImages(list, cb) {
@@ -3606,6 +3755,7 @@
         if (!placeholder) return;
 
         var container = placeholder.parentNode;
+        updateSpotlightMeta();
 
         if (driverImages.length === 0) {
           placeholder.replaceChildren();
@@ -3625,17 +3775,36 @@
         if (!viewHeight && carousel) {
           viewHeight = carousel.offsetHeight;
         }
-        var baseItemHeight = 420;
-        var minItems = 6;
+        var baseItemHeight = 540;
+        var minItems = 5;
+
+        if (windowEl) {
+          var windowStyles = window.getComputedStyle(windowEl);
+          var paddingTop = parseFloat(windowStyles.paddingTop) || 0;
+          var paddingBottom = parseFloat(windowStyles.paddingBottom) || 0;
+          var paddingLeft = parseFloat(windowStyles.paddingLeft) || 0;
+          var paddingRight = parseFloat(windowStyles.paddingRight) || 0;
+          var availableWidth = windowEl.clientWidth;
+          if (!availableWidth) {
+            availableWidth = windowEl.offsetWidth;
+          }
+          availableWidth = Math.max(availableWidth - paddingLeft - paddingRight, 0);
+          if (availableWidth > 0) {
+            baseItemHeight = Math.max(baseItemHeight, availableWidth * 1.25);
+          }
+          if (!viewHeight) {
+            viewHeight = Math.max(windowEl.offsetHeight - (paddingTop + paddingBottom), 0);
+          }
+        }
 
         if (viewHeight) {
-          minItems = Math.max(minItems, Math.ceil(viewHeight / Math.max(baseItemHeight, 1)) + 3);
+          minItems = Math.max(minItems, Math.ceil(viewHeight / Math.max(baseItemHeight, 1)) + 2);
         }
 
         var trackId = placeholder.id || 'carousel-track';
         var uniqueCount = Math.max(driverImages.length, 1);
-        var duration = Math.max(20, uniqueCount * 6);
-        duration = Math.max(duration, minItems * 4);
+        var duration = Math.max(28, uniqueCount * 8);
+        duration = Math.max(duration, minItems * 5);
 
         var config = {
           trackId: trackId,
@@ -3830,11 +3999,30 @@
         </section>
         <aside class="sidebar">
           <div id="driver-carousel" class="sidebar-card driver-carousel">
-            <div class="card-header">
-              <h2>Driver Spotlight</h2>
-              <span class="card-subtitle">Loop through team photos for the big screen.</span>
+            <div class="spotlight-header">
+              <div class="card-header">
+                <span class="spotlight-badge" aria-hidden="true">Team Highlight</span>
+                <h2 id="driver-spotlight-title">Driver Spotlight</h2>
+                <span class="card-subtitle">Loop through team photos for the big screen.</span>
+              </div>
+              <div
+                id="carousel-meta"
+                class="spotlight-meta is-empty"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <span id="carousel-count" class="spotlight-count">No spotlight photos yet</span>
+                <span id="carousel-status" class="spotlight-status"
+                  >Upload driver images to start the rotation.</span
+                >
+              </div>
             </div>
-            <div class="carousel-window">
+            <div
+              class="carousel-window"
+              role="region"
+              aria-labelledby="driver-spotlight-title"
+              aria-describedby="carousel-status"
+            >
               <div id="carousel-track" class="carousel-track"></div>
             </div>
           </div>
