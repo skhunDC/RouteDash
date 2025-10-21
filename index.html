@@ -292,6 +292,8 @@
         grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
         gap: 24px;
         flex: 1 1 auto;
+        align-items: stretch;
+        min-height: 0;
       }
 
       .workspace {
@@ -305,6 +307,7 @@
         flex-direction: column;
         gap: 20px;
         overflow: hidden;
+        min-height: 0;
       }
 
       .workspace::before {
@@ -421,6 +424,8 @@
         display: flex;
         flex-direction: column;
         gap: 24px;
+        min-height: 0;
+        align-self: stretch;
       }
 
       .sidebar-card {
@@ -435,6 +440,14 @@
         gap: 16px;
         overflow: hidden;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        min-height: 0;
+      }
+
+      .sidebar-card.driver-carousel {
+        flex: 1 1 auto;
+        height: 100%;
+        padding: 30px;
+        gap: 24px;
       }
 
       .sidebar-card::before {
@@ -514,19 +527,48 @@
       }
 
       .driver-carousel {
-        gap: 16px;
+        gap: 24px;
+      }
+
+      .driver-carousel .card-header {
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.12);
       }
 
       .carousel-window {
         position: relative;
-        border-radius: 20px;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(var(--brand-secondary-rgb), 0.12));
-        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
-        padding: 18px;
+        flex: 1 1 auto;
+        min-height: 0;
+        border-radius: 26px;
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(var(--brand-secondary-rgb), 0.24));
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
+        padding: 28px 32px;
         overflow: hidden;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 28px 46px -28px rgba(15, 23, 42, 0.4);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 34px 64px -32px rgba(15, 23, 42, 0.48);
         transition: height 0.35s ease;
         contain: layout paint;
+        display: flex;
+      }
+
+      .carousel-window::before,
+      .carousel-window::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 120px;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .carousel-window::before {
+        top: 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+      }
+
+      .carousel-window::after {
+        bottom: 0;
+        background: linear-gradient(0deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
       }
 
       .carousel-window.is-transitioning {
@@ -534,13 +576,18 @@
       }
 
       .carousel-track {
-        position: relative;
+        position: absolute;
+        inset: 0;
+        padding: 0 6px;
         display: flex;
         flex-direction: column;
-        gap: 18px;
-        --carousel-speed: 15s;
+        gap: 28px;
+        --carousel-speed: 24s;
         transition: opacity 0.55s ease;
         opacity: 0;
+        transform: translateY(-50%);
+        animation: scroll-down var(--carousel-speed, 24s) linear infinite;
+        animation-play-state: paused;
       }
 
       .carousel-track.is-layered {
@@ -549,55 +596,70 @@
         width: 100%;
       }
 
-      .carousel-track.is-entering {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .carousel-track.is-active {
-        opacity: 1;
-      }
-
-      .carousel-track.is-exiting {
-        opacity: 0;
-        pointer-events: none;
-      }
-
+      .carousel-track.is-entering,
+      .carousel-track.is-exiting,
       .carousel-track.is-preparing {
         visibility: hidden;
       }
 
-      .carousel-row {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        animation: scroll-left var(--carousel-speed, 30s) linear infinite;
-        will-change: transform;
+      .carousel-track.is-entering,
+      .carousel-track.is-exiting {
+        pointer-events: none;
+        animation-play-state: paused;
       }
 
-      .carousel-row:nth-child(2) {
-        animation-delay: calc(var(--carousel-speed, 30s) / -2);
+      .carousel-track.is-active {
+        opacity: 1;
+        visibility: visible;
+        animation-play-state: running;
       }
 
-      @keyframes scroll-left {
+      @keyframes scroll-down {
         from {
-          transform: translateX(0);
+          transform: translateY(-50%);
         }
+
         to {
-          transform: translateX(-50%);
+          transform: translateY(0);
         }
+      }
+
+      .carousel-item {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 30px 48px -26px rgba(15, 23, 42, 0.55), 0 22px 36px -28px rgba(var(--brand-primary-rgb), 0.35);
+        background: rgba(15, 23, 42, 0.35);
+        isolation: isolate;
+      }
+
+      .carousel-item::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.4));
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .carousel-item:hover::after {
+        opacity: 1;
       }
 
       .driver-carousel img {
-        width: 124px;
-        height: 124px;
-        border-radius: 18px;
+        display: block;
+        width: 100%;
+        height: clamp(240px, 32vh, 360px);
         object-fit: cover;
-        object-position: top;
-        box-shadow: 0 20px 34px -20px rgba(15, 23, 42, 0.55), 0 12px 20px -16px rgba(var(--brand-primary-rgb), 0.45);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        background: radial-gradient(circle at top, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0));
-        flex-shrink: 0;
+        object-position: center;
+        filter: saturate(1.05);
+        transition: transform 0.6s ease;
+      }
+
+      .carousel-item:hover img {
+        transform: scale(1.04);
       }
 
       #loading-overlay {
@@ -1087,7 +1149,7 @@
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 14px 22px -16px rgba(var(--brand-primary-rgb), 0.5);
         }
 
-        .carousel-row {
+        .carousel-track {
           animation: none !important;
         }
       }
@@ -3481,42 +3543,49 @@
           );
         }
 
-        var sequence = driverImages.slice();
-        var rowOffset = sequence.length ? Math.max(1, Math.ceil(sequence.length / config.rows)) : 0;
-        var startIndex = 0;
+        var baseSequence = driverImages.slice();
 
-        function buildRowSequence(offset) {
-          if (!sequence.length) {
-            return [];
-          }
-
-          var baseSequence = [];
-          for (var i = 0; i < config.visiblePerRow; i++) {
-            var nextIndex = (offset + i) % sequence.length;
-            baseSequence.push(sequence[nextIndex]);
-          }
-
-          return baseSequence.concat(baseSequence);
+        if (!baseSequence.length) {
+          return {
+            element: track,
+            ready: Promise.resolve()
+          };
         }
 
-        for (var rowIndex = 0; rowIndex < config.rows; rowIndex++) {
-          var row = document.createElement('div');
-          row.className = 'carousel-row';
-          var rowSequence = buildRowSequence(startIndex);
-          rowSequence.forEach(function(src) {
+        var minItems = Math.max(1, config.minItems || 0);
+        var expandedSequence = baseSequence.slice();
+        var sourceSequence = baseSequence.slice();
+
+        while (expandedSequence.length < minItems && sourceSequence.length) {
+          expandedSequence = expandedSequence.concat(sourceSequence);
+        }
+
+        var maxItems = baseSequence.length * 6 || expandedSequence.length;
+        if (expandedSequence.length > maxItems) {
+          expandedSequence = expandedSequence.slice(0, maxItems);
+        }
+
+        var loops = [expandedSequence.slice(), expandedSequence.slice()];
+
+        loops.forEach(function(sequence) {
+          sequence.forEach(function(src) {
+            var item = document.createElement('div');
+            item.className = 'carousel-item';
             var img = document.createElement('img');
             img.src = src;
+            img.alt = '';
             waitForImage(img);
-            row.appendChild(img);
+            item.appendChild(img);
+            track.appendChild(item);
           });
-          track.appendChild(row);
+        });
 
-          if (sequence.length) {
-            startIndex = (startIndex + rowOffset) % sequence.length;
-          }
+        var duration = Number(config.duration);
+        if (!isFinite(duration) || duration <= 0) {
+          duration = Math.max(18, expandedSequence.length * 5);
         }
 
-        track.style.setProperty('--carousel-speed', config.duration.toFixed(2) + 's');
+        track.style.setProperty('--carousel-speed', duration.toFixed(2) + 's');
 
         return {
           element: track,
@@ -3545,19 +3614,26 @@
         }
 
         var carousel = document.getElementById('driver-carousel');
-        var imgWidth = 140;
-        var gap = 16;
-        var rows = 2;
-        var width = carousel ? carousel.offsetWidth : 600;
-        var visiblePerRow = Math.max(3, Math.ceil(width / (imgWidth + gap)) + 2);
-        var totalImagesPerRow = visiblePerRow * 2;
-        var duration = Math.max(10, (totalImagesPerRow * 5) / 1.5) / 2;
+        var windowEl = carousel ? carousel.querySelector('.carousel-window') : null;
+        var viewHeight = windowEl ? windowEl.offsetHeight : 0;
+        if (!viewHeight && carousel) {
+          viewHeight = carousel.offsetHeight;
+        }
+        var baseItemHeight = 260;
+        var minItems = 6;
+
+        if (viewHeight) {
+          minItems = Math.max(minItems, Math.ceil(viewHeight / Math.max(baseItemHeight, 1)) + 3);
+        }
 
         var trackId = placeholder.id || 'carousel-track';
+        var uniqueCount = Math.max(driverImages.length, 1);
+        var duration = Math.max(20, uniqueCount * 6);
+        duration = Math.max(duration, minItems * 4);
+
         var config = {
           trackId: trackId,
-          visiblePerRow: visiblePerRow,
-          rows: rows,
+          minItems: minItems,
           duration: duration
         };
 
