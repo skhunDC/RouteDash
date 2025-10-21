@@ -361,6 +361,62 @@
         pointer-events: none;
       }
 
+      .floating-card {
+        position: absolute;
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+        min-width: 240px;
+        min-height: 180px;
+        max-width: calc(100% - 24px);
+        max-height: calc(100% - 24px);
+        cursor: move;
+        overflow: visible;
+        transition: box-shadow 0.2s ease;
+      }
+
+      .floating-card.is-locked {
+        cursor: default;
+      }
+
+      .floating-card .floating-card-inner {
+        width: 100%;
+        height: 100%;
+      }
+
+      .floating-card .sidebar-card:hover {
+        transform: none;
+      }
+
+      .floating-card .floating-resizer {
+        position: absolute;
+        bottom: 14px;
+        right: 14px;
+        width: 20px;
+        height: 20px;
+        border-radius: 8px;
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.28);
+        background: rgba(var(--brand-primary-rgb), 0.12);
+        color: rgba(var(--brand-primary-rgb), 0.75);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: se-resize;
+        box-shadow: 0 8px 16px rgba(var(--brand-primary-rgb), 0.25);
+        pointer-events: auto;
+      }
+
+      .floating-card .floating-resizer::before {
+        content: '\2198';
+        transform: translateY(-1px);
+      }
+
+      .floating-card.is-locked .floating-resizer {
+        display: none;
+      }
+
       .sidebar {
         display: flex;
         flex-direction: column;
@@ -1239,9 +1295,11 @@
         btn.addEventListener('click', function() {
           framesLocked = !framesLocked;
           btn.textContent = framesLocked ? 'Unlock' : 'Lock';
+          updateFloatingLockState();
           if (!framesLocked) keepFramesInView();
         });
         btn.textContent = 'Unlock';
+        updateFloatingLockState();
       }
 
       function init() {
@@ -1270,6 +1328,17 @@
             decrementLoad();
           })
           .getFrames();
+        incrementLoad();
+        google.script.run
+          .withSuccessHandler(function(layouts) {
+            initFloatingCards(layouts || {});
+            decrementLoad();
+          })
+          .withFailureHandler(function() {
+            initFloatingCards({});
+            decrementLoad();
+          })
+          .getFloatingLayouts();
         document.getElementById('add-frame').addEventListener('click', addFrame);
         initDriver();
         initHeaderTitle();
@@ -1291,6 +1360,9 @@
       var maxPendingLoads = 0;
       var chartInstances = {};
       var frameIdCounter = 0;
+      var floatingLayouts = {};
+      var floatingCardsInitialized = false;
+      var floatingSaveTimer = null;
       var DASHBOARD_EXEMPT_TITLES = ["Who's Off, When?", 'Ride-Along Schedule'];
 
       function shouldSkipDashboard(frame) {
@@ -3016,6 +3088,191 @@
         });
       }
 
+      function parseNumber(value, fallback) {
+        var num = parseFloat(value);
+        return isFinite(num) ? num : fallback;
+      }
+
+      function sanitizeFloatingLayouts(raw) {
+        var cleaned = {};
+        if (!raw || typeof raw !== 'object') return cleaned;
+        Object.keys(raw).forEach(function(key) {
+          var source = raw[key];
+          if (!source || typeof source !== 'object') return;
+          var entry = {};
+          ['x', 'y', 'width', 'height'].forEach(function(prop) {
+            var val = parseFloat(source[prop]);
+            if (isFinite(val)) {
+              entry[prop] = val;
+            }
+          });
+          cleaned[key] = entry;
+        });
+        return cleaned;
+      }
+
+      function measureFloatingCard(el) {
+        var target = el.querySelector('.floating-card-inner') || el;
+        var rect = target.getBoundingClientRect();
+        var width = rect.width || target.offsetWidth || 320;
+        var height = rect.height || target.offsetHeight || 220;
+        return { width: width, height: height };
+      }
+
+      function updateFloatingLayout(id, partial) {
+        if (!floatingLayouts[id]) floatingLayouts[id] = {};
+        Object.keys(partial || {}).forEach(function(key) {
+          var value = parseFloat(partial[key]);
+          if (isFinite(value)) {
+            floatingLayouts[id][key] = value;
+          }
+        });
+      }
+
+      function scheduleFloatingSave() {
+        if (!floatingCardsInitialized) return;
+        if (floatingSaveTimer) clearTimeout(floatingSaveTimer);
+        floatingSaveTimer = setTimeout(function() {
+          floatingSaveTimer = null;
+          google.script.run.saveFloatingLayouts(floatingLayouts);
+        }, 220);
+      }
+
+      function enableFloatingCardDrag(el, id) {
+        el.addEventListener('mousedown', function(e) {
+          if (framesLocked) return;
+          if (e.button !== 0) return;
+          if (e.target.closest('.floating-resizer')) return;
+          if (e.target.closest('input, textarea, button, select, a, [contenteditable="true"]'))
+            return;
+          e.preventDefault();
+          var area = document.getElementById('viewing-area');
+          if (!area) return;
+          var rect = area.getBoundingClientRect();
+          var startX = e.clientX;
+          var startY = e.clientY;
+          var startLeft = el.offsetLeft;
+          var startTop = el.offsetTop;
+          el.style.zIndex = zIndex++;
+          function move(ev) {
+            var width = el.offsetWidth;
+            var height = el.offsetHeight;
+            var x = startLeft + ev.clientX - startX;
+            var y = startTop + ev.clientY - startY;
+            x = Math.max(0, Math.min(x, Math.max(0, rect.width - width)));
+            y = Math.max(0, Math.min(y, Math.max(0, rect.height - height)));
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            updateFloatingLayout(id, { x: x, y: y });
+          }
+          function up() {
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+            document.removeEventListener('mouseleave', up);
+            scheduleFloatingSave();
+          }
+          document.addEventListener('mousemove', move);
+          document.addEventListener('mouseup', up);
+          document.addEventListener('mouseleave', up);
+        });
+      }
+
+      function enableFloatingCardResize(el, handle, id) {
+        handle.addEventListener('mousedown', function(e) {
+          if (framesLocked) return;
+          e.preventDefault();
+          e.stopPropagation();
+          var area = document.getElementById('viewing-area');
+          if (!area) return;
+          var rect = area.getBoundingClientRect();
+          var startX = e.clientX;
+          var startY = e.clientY;
+          var startW = el.offsetWidth;
+          var startH = el.offsetHeight;
+          var minWidth = parseNumber(el.dataset.minWidth, 200);
+          var minHeight = parseNumber(el.dataset.minHeight, 160);
+          el.style.zIndex = zIndex++;
+          function move(ev) {
+            var width = startW + ev.clientX - startX;
+            var height = startH + ev.clientY - startY;
+            width = Math.max(minWidth, Math.min(width, Math.max(0, rect.width - el.offsetLeft)));
+            height = Math.max(minHeight, Math.min(height, Math.max(0, rect.height - el.offsetTop)));
+            el.style.width = width + 'px';
+            el.style.height = height + 'px';
+            updateFloatingLayout(id, { width: width, height: height });
+          }
+          function up() {
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+            document.removeEventListener('mouseleave', up);
+            scheduleFloatingSave();
+          }
+          document.addEventListener('mousemove', move);
+          document.addEventListener('mouseup', up);
+          document.addEventListener('mouseleave', up);
+        });
+      }
+
+      function updateFloatingLockState() {
+        var cards = document.querySelectorAll('.viewing-area [data-floating-card]');
+        cards.forEach(function(card) {
+          if (framesLocked) {
+            card.classList.add('is-locked');
+          } else {
+            card.classList.remove('is-locked');
+          }
+        });
+      }
+
+      function initFloatingCards(rawLayouts) {
+        var area = document.getElementById('viewing-area');
+        if (!area) return;
+        floatingCardsInitialized = false;
+        floatingLayouts = {};
+        var sanitized = sanitizeFloatingLayouts(rawLayouts);
+        var rect = area.getBoundingClientRect();
+        if (!rect.width) rect.width = area.offsetWidth || 0;
+        if (!rect.height) rect.height = area.offsetHeight || 0;
+        var cards = area.querySelectorAll('[data-floating-card]');
+        cards.forEach(function(card) {
+          var id = card.dataset.floatingCard;
+          if (!id) return;
+          var measurement = measureFloatingCard(card);
+          var defaults = {
+            x: parseNumber(card.dataset.defaultX, 24),
+            y: parseNumber(card.dataset.defaultY, 24),
+            width: parseNumber(card.dataset.defaultWidth, measurement.width),
+            height: parseNumber(card.dataset.defaultHeight, measurement.height),
+            minWidth: parseNumber(card.dataset.minWidth, Math.min(measurement.width, 240)),
+            minHeight: parseNumber(card.dataset.minHeight, Math.min(measurement.height, 180))
+          };
+          card.dataset.minWidth = defaults.minWidth;
+          card.dataset.minHeight = defaults.minHeight;
+          var saved = sanitized[id] || {};
+          var width = parseNumber(saved.width, defaults.width);
+          var height = parseNumber(saved.height, defaults.height);
+          width = Math.max(defaults.minWidth, width);
+          height = Math.max(defaults.minHeight, height);
+          if (rect.width) width = Math.min(width, rect.width);
+          if (rect.height) height = Math.min(height, rect.height);
+          var x = parseNumber(saved.x, defaults.x);
+          var y = parseNumber(saved.y, defaults.y);
+          if (rect.width) x = Math.max(0, Math.min(x, Math.max(0, rect.width - width)));
+          if (rect.height) y = Math.max(0, Math.min(y, Math.max(0, rect.height - height)));
+          card.style.width = width + 'px';
+          card.style.height = height + 'px';
+          card.style.left = x + 'px';
+          card.style.top = y + 'px';
+          card.style.zIndex = zIndex++;
+          floatingLayouts[id] = { x: x, y: y, width: width, height: height };
+          enableFloatingCardDrag(card, id);
+          var handle = card.querySelector('[data-floating-resizer]');
+          if (handle) enableFloatingCardResize(card, handle, id);
+        });
+        floatingCardsInitialized = true;
+        updateFloatingLockState();
+      }
+
       function enableDrag(el) {
         var startX, startY, startLeft, startTop, idx;
 
@@ -3118,6 +3375,41 @@
           frames[idx].height = height;
         });
         saveFrames();
+
+        var floatingChanged = false;
+        var floatingCards = document.querySelectorAll('.viewing-area [data-floating-card]');
+        floatingCards.forEach(function(card) {
+          var id = card.dataset.floatingCard;
+          if (!id) return;
+          var minWidth = parseNumber(card.dataset.minWidth, 200);
+          var minHeight = parseNumber(card.dataset.minHeight, 160);
+          var currentLeft = card.offsetLeft;
+          var currentTop = card.offsetTop;
+          var currentWidth = card.offsetWidth;
+          var currentHeight = card.offsetHeight;
+          var width = Math.max(minWidth, Math.min(currentWidth, Math.max(0, rect.width - currentLeft)));
+          var height = Math.max(minHeight, Math.min(currentHeight, Math.max(0, rect.height - currentTop)));
+          var x = Math.max(0, Math.min(currentLeft, Math.max(0, rect.width - width)));
+          var y = Math.max(0, Math.min(currentTop, Math.max(0, rect.height - height)));
+          if (Math.abs(x - currentLeft) > 0.5) card.style.left = x + 'px';
+          if (Math.abs(y - currentTop) > 0.5) card.style.top = y + 'px';
+          if (Math.abs(width - currentWidth) > 0.5) card.style.width = width + 'px';
+          if (Math.abs(height - currentHeight) > 0.5) card.style.height = height + 'px';
+          var layout = floatingLayouts[id] || {};
+          if (
+            !layout ||
+            layout.x !== x ||
+            layout.y !== y ||
+            layout.width !== width ||
+            layout.height !== height
+          ) {
+            floatingLayouts[id] = { x: x, y: y, width: width, height: height };
+            floatingChanged = true;
+          }
+        });
+        if (floatingChanged) {
+          scheduleFloatingSave();
+        }
       }
 
       window.addEventListener('resize', keepFramesInView);
@@ -3410,24 +3702,51 @@
             <h2>Today's Operations</h2>
             <p>Drag cards into place and connect each frame to the data your team needs every day.</p>
           </div>
-          <div id="viewing-area" class="viewing-area"></div>
+          <div id="viewing-area" class="viewing-area">
+            <div
+              class="floating-card"
+              data-floating-card="driver-week"
+              data-default-x="24"
+              data-default-y="24"
+              data-default-width="320"
+              data-default-height="260"
+              data-min-width="260"
+              data-min-height="220"
+              style="left:24px;top:24px;width:320px;"
+            >
+              <div id="driver-week" class="floating-card-inner sidebar-card driver-week">
+                <div class="card-header">
+                  <h2>Driver of the Week</h2>
+                  <span class="card-subtitle">Celebrate wins and keep the team inspired.</span>
+                </div>
+                <label for="driver-name">Driver name</label>
+                <input type="text" id="driver-name" placeholder="Enter name">
+              </div>
+              <div class="floating-resizer" data-floating-resizer aria-hidden="true"></div>
+            </div>
+            <div
+              class="floating-card"
+              data-floating-card="team-message"
+              data-default-x="24"
+              data-default-y="320"
+              data-default-width="320"
+              data-default-height="220"
+              data-min-width="260"
+              data-min-height="200"
+              style="left:24px;top:320px;width:320px;"
+            >
+              <div class="floating-card-inner sidebar-card quote-card">
+                <div class="card-header">
+                  <h2>Team Message</h2>
+                  <span class="card-subtitle">Share highlights, reminders or goals for the day.</span>
+                </div>
+                <p id="weekly-quote">Loading quote...</p>
+              </div>
+              <div class="floating-resizer" data-floating-resizer aria-hidden="true"></div>
+            </div>
+          </div>
         </section>
         <aside class="sidebar">
-          <div id="driver-week" class="sidebar-card driver-week">
-            <div class="card-header">
-              <h2>Driver of the Week</h2>
-              <span class="card-subtitle">Celebrate wins and keep the team inspired.</span>
-            </div>
-            <label for="driver-name">Driver name</label>
-            <input type="text" id="driver-name" placeholder="Enter name">
-          </div>
-          <div class="sidebar-card quote-card">
-            <div class="card-header">
-              <h2>Team Message</h2>
-              <span class="card-subtitle">Share highlights, reminders or goals for the day.</span>
-            </div>
-            <p id="weekly-quote">Loading quote...</p>
-          </div>
           <div id="driver-carousel" class="sidebar-card driver-carousel">
             <div class="card-header">
               <h2>Driver Spotlight</h2>
