@@ -581,7 +581,8 @@
         padding: 0 6px;
         display: flex;
         flex-direction: column;
-        gap: 28px;
+        gap: 32px;
+        align-items: center;
         --carousel-speed: 24s;
         transition: opacity 0.55s ease;
         opacity: 0;
@@ -631,6 +632,10 @@
         box-shadow: 0 30px 48px -26px rgba(15, 23, 42, 0.55), 0 22px 36px -28px rgba(var(--brand-primary-rgb), 0.35);
         background: rgba(15, 23, 42, 0.35);
         isolation: isolate;
+        width: min(100%, 340px);
+        aspect-ratio: 3 / 4;
+        margin: 0 auto;
+        display: flex;
       }
 
       .carousel-item::after {
@@ -651,7 +656,8 @@
       .driver-carousel img {
         display: block;
         width: 100%;
-        height: clamp(240px, 32vh, 360px);
+        height: 100%;
+        min-height: 100%;
         object-fit: cover;
         object-position: center;
         filter: saturate(1.05);
@@ -3619,7 +3625,7 @@
         if (!viewHeight && carousel) {
           viewHeight = carousel.offsetHeight;
         }
-        var baseItemHeight = 260;
+        var baseItemHeight = 420;
         var minItems = 6;
 
         if (viewHeight) {
