@@ -1,7 +1,22 @@
 function doGet() {
-  return HtmlService.createTemplateFromFile('index').evaluate()
+  var template = getDashboardTemplate();
+  return template.evaluate()
     .setTitle('Route Operations Dashboard')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getDashboardTemplate() {
+  var names = ['index', 'Index'];
+  for (var i = 0; i < names.length; i++) {
+    try {
+      return HtmlService.createTemplateFromFile(names[i]);
+    } catch (e) {
+      // try the next candidate
+    }
+  }
+  return HtmlService.createTemplate(
+    '<h1>Missing index.html</h1><p>Add index.html to the Apps Script project.</p>'
+  );
 }
 
 var DASHBOARD_LOG_SHEET_NAME = 'Route Dashboard Logs';
