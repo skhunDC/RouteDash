@@ -1,7 +1,60 @@
 function doGet() {
-  return HtmlService.createTemplateFromFile('index').evaluate()
+  var template = getDashboardTemplate();
+  return template.evaluate()
     .setTitle('Route Operations Dashboard')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getDashboardTemplate() {
+  var names = ['index', 'Index'];
+  for (var i = 0; i < names.length; i++) {
+    try {
+      return HtmlService.createTemplateFromFile(names[i]);
+    } catch (e) {
+      // try the next candidate
+    }
+  }
+  return HtmlService.createTemplate(
+    '<h1>Missing index.html</h1><p>Add index.html to the Apps Script project.</p>'
+  );
+}
+
+var DASHBOARD_LOG_SHEET_NAME = 'Route Dashboard Logs';
+
+function getOrCreateLogSheet() {
+  var props = PropertiesService.getScriptProperties();
+  var sheetId = props.getProperty('logSpreadsheetId');
+  var spreadsheet = null;
+
+  if (sheetId) {
+    try {
+      spreadsheet = SpreadsheetApp.openById(sheetId);
+    } catch (e) {
+      spreadsheet = null;
+    }
+  }
+
+  if (!spreadsheet) {
+    spreadsheet = SpreadsheetApp.create(DASHBOARD_LOG_SHEET_NAME);
+    props.setProperty('logSpreadsheetId', spreadsheet.getId());
+  }
+
+  var sheet = spreadsheet.getSheets()[0];
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, 4).setValues([['Timestamp', 'User', 'Action', 'Details']]);
+  }
+  return sheet;
+}
+
+function logDashboardUpdate(action, details) {
+  if (!action) return;
+  try {
+    var sheet = getOrCreateLogSheet();
+    var userEmail = Session.getActiveUser().getEmail() || 'Unknown';
+    sheet.appendRow([new Date(), userEmail, action, details || '']);
+  } catch (e) {
+    // avoid blocking dashboard updates if logging fails
+  }
 }
 
 function weatherCodeToText(code) {
@@ -61,6 +114,7 @@ function getFrames() {
 
 function saveFrames(frames) {
   PropertiesService.getScriptProperties().setProperty('frames', JSON.stringify(frames));
+  logDashboardUpdate('Saved frames', 'Count: ' + (frames ? frames.length : 0));
 }
 
 function getFloatingLayouts() {
@@ -78,9 +132,11 @@ function saveFloatingLayouts(layouts) {
   var props = PropertiesService.getScriptProperties();
   if (!layouts || typeof layouts !== 'object') {
     props.deleteProperty('floatingLayouts');
+    logDashboardUpdate('Cleared floating layouts');
     return;
   }
   props.setProperty('floatingLayouts', JSON.stringify(layouts));
+  logDashboardUpdate('Saved floating layouts');
 }
 
 function getDriverOfTheWeek() {
@@ -90,6 +146,7 @@ function getDriverOfTheWeek() {
 
 function saveDriverOfTheWeek(name) {
   PropertiesService.getScriptProperties().setProperty('driverOfWeek', name || '');
+  logDashboardUpdate('Updated driver of the week', name || '');
 }
 
 function getRandomQuote() {
@@ -153,6 +210,7 @@ function saveHeaderTitle(title) {
     'headerTitle',
     title || 'Route Operations Dashboard'
   );
+  logDashboardUpdate('Updated header title', title || 'Route Operations Dashboard');
 }
 
 function getLogoImage() {
@@ -164,8 +222,10 @@ function saveLogoImage(data) {
   var props = PropertiesService.getScriptProperties();
   if (data) {
     props.setProperty('logoImage', data);
+    logDashboardUpdate('Updated logo image');
   } else {
     props.deleteProperty('logoImage');
+    logDashboardUpdate('Cleared logo image');
   }
 }
 
@@ -206,6 +266,7 @@ function addDriverImage(data) {
   var file = DriveApp.createFile(blob);
   arr.push(file.getId());
   props.setProperty('driverImageIds', JSON.stringify(arr));
+  logDashboardUpdate('Added driver image', 'Count: ' + arr.length);
 }
 
 function clearDriverImages() {
@@ -220,6 +281,7 @@ function clearDriverImages() {
     }
   });
   props.deleteProperty('driverImageIds');
+  logDashboardUpdate('Cleared driver images');
 }
 
 function updateDriverImages(list) {
@@ -240,5 +302,6 @@ function updateDriverImages(list) {
     'driverImageIds',
     JSON.stringify(ids)
   );
+  logDashboardUpdate('Updated driver images', 'Count: ' + ids.length);
   return getDriverImages();
 }
