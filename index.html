@@ -1289,6 +1289,10 @@
           grid-template-columns: 1fr;
         }
 
+        .viewing-area {
+          grid-template-columns: 1fr;
+        }
+
         .sidebar {
           order: -1;
           flex-direction: row;
@@ -2791,7 +2795,7 @@
         maxPendingLoads = Math.max(maxPendingLoads, remaining);
         if (statusEl) {
           statusEl.textContent = remaining > 0
-            ? 'Preparing your Dashboard…'
+            ? 'Preparing Dashboard for our Route Team!!'
             : 'Wrapping up…';
         }
         if (detailEl) {
@@ -3382,8 +3386,7 @@
         <div class="loading-spinner" aria-hidden="true"></div>
         <div class="loading-text">
           <strong id="loading-message">
-            <span id="loading-status">Preparing your Dashboard…</span>
-            <span class="loading-name">Mr. Perry</span>
+            <span id="loading-status">Preparing Dashboard for our Route Team!!</span>
           </strong>
           <span id="loading-detail">Starting up</span>
         </div>
