@@ -1119,6 +1119,170 @@
         margin-top: 16px;
       }
 
+      .dashboard-data-card {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+        border-radius: 8px;
+        padding: 5px 7px;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .dashboard-data-label {
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+
+      .dashboard-data-value {
+        font-size: 0.9rem;
+        color: var(--brand-dark);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dashboard-data-caption {
+        margin: 0 0 4px;
+        font-size: 0.68rem;
+        color: var(--text-secondary);
+      }
+
+      .weekly-sales-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+
+      .weekly-sales-card {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+        border-radius: 8px;
+        padding: 5px 7px;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .weekly-sales-card-label {
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+
+      .weekly-sales-card-value {
+        font-size: 0.9rem;
+        color: var(--brand-dark);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .weekly-sales-delta-badge {
+        font-size: 0.66rem;
+        font-weight: 700;
+      }
+
+      .weekly-sales-delta-badge[data-sign='positive'] { color: #047857; }
+      .weekly-sales-delta-badge[data-sign='negative'] { color: #b91c1c; }
+      .weekly-sales-delta-badge[data-sign='zero'] { color: var(--text-secondary); }
+
+      .dashboard-disabled-message {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .dashboard-list {
+        margin-top: 16px;
+      }
+
+      .dashboard-data-card {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+        border-radius: 10px;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .dashboard-data-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+
+      .dashboard-data-value {
+        font-size: 0.95rem;
+        color: var(--brand-dark);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dashboard-data-caption {
+        margin: 0 0 8px;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .weekly-sales-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .weekly-sales-card {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+        border-radius: 10px;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .weekly-sales-card-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+
+      .weekly-sales-card-value {
+        font-size: 0.95rem;
+        color: var(--brand-dark);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .weekly-sales-delta-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
+      .weekly-sales-delta-badge[data-sign='positive'] { color: #047857; }
+      .weekly-sales-delta-badge[data-sign='negative'] { color: #b91c1c; }
+      .weekly-sales-delta-badge[data-sign='zero'] { color: var(--text-secondary); }
+
+      .dashboard-disabled-message {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .dashboard-list {
+        margin-top: 16px;
+      }
+
       .dashboard-list table {
         width: 100%;
         border-collapse: collapse;
@@ -1286,6 +1450,10 @@
 
       @media (max-width: 1100px) {
         .main-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .viewing-area {
           grid-template-columns: 1fr;
         }
 
@@ -2780,7 +2948,7 @@
         maxPendingLoads = Math.max(maxPendingLoads, remaining);
         if (statusEl) {
           statusEl.textContent = remaining > 0
-            ? 'Preparing your Dashboard…'
+            ? 'Preparing Dashboard for our Route Team!!'
             : 'Wrapping up…';
         }
         if (detailEl) {
@@ -3371,8 +3539,7 @@
         <div class="loading-spinner" aria-hidden="true"></div>
         <div class="loading-text">
           <strong id="loading-message">
-            <span id="loading-status">Preparing your Dashboard…</span>
-            <span class="loading-name">Mr. Perry</span>
+            <span id="loading-status">Preparing Dashboard for our Route Team!!</span>
           </strong>
           <span id="loading-detail">Starting up</span>
         </div>
