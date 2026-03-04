@@ -1775,9 +1775,9 @@
           return;
         }
 
-        // Dashboard-enabled frames are chart-first: hide the editable sheet from the card view
-        // while keeping sheet data persisted in the backend.
-        sheetEl.style.display = 'none';
+        // Keep the editable sheet visible for dashboard-enabled frames so users can
+        // review source data above the chart.
+        sheetEl.style.display = '';
       }
 
       function applyAdaptiveSheetLayout(container, sheet) {
