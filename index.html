@@ -350,36 +350,12 @@
         border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
         background: linear-gradient(135deg, rgba(var(--brand-secondary-rgb), 0.12), rgba(var(--brand-secondary-rgb), 0)) var(--surface-muted);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -30px 60px rgba(15, 23, 42, 0.08);
-        overflow: hidden;
-      }
-
-      .viewing-area::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0) 23px, rgba(var(--brand-primary-rgb), 0.05) 24px),
-          linear-gradient(180deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0) 23px, rgba(var(--brand-primary-rgb), 0.05) 24px);
-        background-size: 24px 24px;
-        opacity: 0.4;
-        pointer-events: none;
+        padding: 20px;
+        overflow: auto;
       }
 
       .floating-card {
-        position: absolute;
-        display: flex;
-        align-items: stretch;
-        justify-content: stretch;
-        min-width: 240px;
-        min-height: 180px;
-        max-width: calc(100% - 24px);
-        max-height: calc(100% - 24px);
-        cursor: move;
-        overflow: visible;
-        transition: box-shadow 0.2s ease;
-      }
-
-      .floating-card.is-locked {
-        cursor: default;
+        display: block;
       }
 
       .floating-card .floating-card-inner {
@@ -391,33 +367,12 @@
         transform: none;
       }
 
-      .floating-card .floating-resizer {
-        position: absolute;
-        bottom: 14px;
-        right: 14px;
-        width: 20px;
-        height: 20px;
-        border-radius: 8px;
-        border: 1px solid rgba(var(--brand-primary-rgb), 0.28);
-        background: rgba(var(--brand-primary-rgb), 0.12);
-        color: rgba(var(--brand-primary-rgb), 0.75);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        font-weight: 700;
-        cursor: se-resize;
-        box-shadow: 0 8px 16px rgba(var(--brand-primary-rgb), 0.25);
-        pointer-events: auto;
-      }
-
-      .floating-card .floating-resizer::before {
-        content: '\2198';
-        transform: translateY(-1px);
-      }
-
-      .floating-card.is-locked .floating-resizer {
-        display: none;
+      .frame-grid {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+        align-content: start;
       }
 
       .sidebar {
@@ -629,211 +584,71 @@
         align-items: start;
       }
 
+      .spotlight-side-cards {
+        display: grid;
+        gap: 14px;
+      }
+
+      .spotlight-side-cards .sidebar-card {
+        padding: 18px;
+        border-radius: 18px;
+      }
+
+      .spotlight-side-cards .card-header h2 {
+        font-size: 1rem;
+      }
+
+      .spotlight-side-cards .driver-week {
+        gap: 12px;
+      }
+
+      .spotlight-side-cards .driver-week input {
+        font-size: 1.08rem;
+        padding: 10px 12px;
+      }
+
+      .spotlight-side-cards #weekly-quote {
+        font-size: 0.93rem;
+      }
+
       @media (min-width: 1100px) {
         .spotlight-body {
           grid-template-columns: clamp(240px, 26vw, 320px) minmax(0, 1fr);
           align-items: stretch;
         }
-
-        .spotlight-meta {
-          width: 100%;
-          align-self: stretch;
-        }
-      }
-
-      .spotlight-meta {
-        display: flex;
-        flex-direction: column;
-        gap: clamp(10px, 1.6vw, 16px);
-        padding: clamp(18px, 2vw, 26px);
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.82);
-        border: 1px solid rgba(var(--brand-primary-rgb), 0.18);
-        box-shadow: 0 36px 70px -38px rgba(var(--brand-primary-rgb), 0.48);
-        color: var(--text-secondary);
-        backdrop-filter: blur(10px);
-        width: min(100%, clamp(320px, 32vw, 360px));
-      }
-
-      .spotlight-meta.is-empty {
-        background: rgba(241, 248, 255, 0.94);
-        border-color: rgba(var(--brand-secondary-rgb), 0.26);
-      }
-
-      .spotlight-count {
-        margin: 0;
-        font-size: clamp(1.2rem, 1.9vw, 1.65rem);
-        font-weight: 700;
-        color: var(--brand-dark);
-      }
-
-      .spotlight-status {
-        margin: 0;
-        font-size: clamp(0.95rem, 1.2vw, 1.08rem);
-        line-height: 1.55;
-      }
-
-      .spotlight-meta.is-empty .spotlight-count {
-        color: rgba(var(--brand-primary-rgb), 0.75);
-      }
-
-      .spotlight-hint {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-size: clamp(0.85rem, 1.05vw, 0.95rem);
-        color: rgba(var(--brand-primary-rgb), 0.8);
-        padding-top: 8px;
-        border-top: 1px dashed rgba(var(--brand-primary-rgb), 0.2);
-      }
-
-      .hint-icon {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(var(--brand-primary-rgb), 0.12);
-        color: var(--brand-primary);
-        font-weight: 600;
       }
 
       .carousel-window {
         position: relative;
         flex: 1 1 auto;
-        min-height: clamp(320px, 48vh, 640px);
-        border-radius: clamp(28px, 3vw, 52px);
+        min-height: clamp(240px, 35vh, 420px);
+        border-radius: clamp(20px, 2.2vw, 30px);
         background: linear-gradient(162deg, rgba(255, 255, 255, 0.94), rgba(var(--brand-secondary-rgb), 0.3));
         border: 1px solid rgba(var(--brand-primary-rgb), 0.18);
-        padding: clamp(20px, 2.6vw, 44px);
+        padding: clamp(12px, 1.5vw, 20px);
         overflow: hidden;
-        box-shadow: 0 40px 82px -38px rgba(15, 23, 42, 0.58);
-        transition: height 0.35s ease;
-        contain: layout paint;
-      }
-
-      .carousel-window::before,
-      .carousel-window::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        pointer-events: none;
-        z-index: 2;
-      }
-
-      .carousel-window::before {
-        top: 0;
-        height: clamp(72px, 12vh, 160px);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0));
-      }
-
-      .carousel-window::after {
-        bottom: 0;
-        height: clamp(72px, 12vh, 160px);
-        background: linear-gradient(0deg, rgba(15, 23, 42, 0.22), rgba(15, 23, 42, 0));
-      }
-
-      .carousel-window.is-transitioning {
-        height: var(--carousel-height);
+        box-shadow: 0 24px 52px -38px rgba(15, 23, 42, 0.6);
       }
 
       .carousel-track {
-        position: absolute;
-        inset: clamp(12px, 2vw, 32px);
+        height: 100%;
         display: flex;
-        flex-direction: column;
-        gap: clamp(26px, 3vw, 52px);
+        flex-direction: row;
         align-items: center;
-        --carousel-speed: 32s;
-        transition: opacity 0.6s ease;
-        opacity: 0;
-        transform: translateY(0);
-        animation: spotlight-scroll var(--carousel-speed, 32s) linear infinite;
-        animation-play-state: paused;
-      }
-
-      .carousel-track.is-layered {
-        position: absolute;
-        inset: clamp(12px, 2vw, 32px);
-        width: auto;
-      }
-
-      .carousel-track.is-entering,
-      .carousel-track.is-exiting,
-      .carousel-track.is-preparing {
-        visibility: hidden;
-      }
-
-      .carousel-track.is-entering,
-      .carousel-track.is-exiting {
-        pointer-events: none;
-        animation-play-state: paused;
-      }
-
-      .carousel-track.is-active {
-        opacity: 1;
-        visibility: visible;
-        animation-play-state: running;
-      }
-
-      @keyframes spotlight-scroll {
-        from {
-          transform: translateY(0);
-        }
-
-        to {
-          transform: translateY(-50%);
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .carousel-track {
-          animation: none;
-          transform: translateY(0);
-        }
+        justify-content: center;
       }
 
       .carousel-item {
         position: relative;
-        border-radius: clamp(26px, 3vw, 44px);
+        border-radius: 22px;
         overflow: hidden;
-        box-shadow: 0 46px 88px -40px rgba(15, 23, 42, 0.68), 0 36px 62px -34px rgba(var(--brand-primary-rgb), 0.42);
+        box-shadow: 0 24px 40px -30px rgba(15, 23, 42, 0.7);
         background: rgba(15, 23, 42, 0.42);
         border: 1px solid rgba(255, 255, 255, 0.22);
-        isolation: isolate;
-        width: min(100%, clamp(480px, 34vw, 640px));
-        aspect-ratio: 5 / 3;
+        width: min(100%, 440px);
+        aspect-ratio: 4 / 3;
         margin: 0 auto;
         display: flex;
-      }
-
-      .carousel-item::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(130deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 38%, rgba(15, 23, 42, 0.4) 100%);
-        mix-blend-mode: screen;
-        opacity: 0.85;
-        pointer-events: none;
-        z-index: 1;
-      }
-
-      .carousel-item::after {
-        content: '';
-        position: absolute;
-        inset: clamp(12px, 1.3vw, 20px);
-        border-radius: inherit;
-        border: 1px solid rgba(255, 255, 255, 0.26);
-        opacity: 0;
-        transition: opacity 0.5s ease;
-        z-index: 1;
-        pointer-events: none;
-      }
-
-      .carousel-item:hover::after {
-        opacity: 1;
       }
 
       .driver-carousel img {
@@ -844,13 +659,7 @@
         object-fit: cover;
         object-position: center;
         border-radius: inherit;
-        filter: saturate(1.06) contrast(1.05);
-        transition: transform 0.6s ease, filter 0.6s ease;
-      }
-
-      .carousel-item:hover img {
-        transform: scale(1.04);
-        filter: saturate(1.1) contrast(1.08);
+        transform: scale(1.12);
       }
 
       .spotlight-footer {
@@ -985,7 +794,7 @@
       }
 
       .frame {
-        position: absolute;
+        position: relative;
         border-radius: 22px;
         border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(var(--brand-secondary-rgb), 0.12));
@@ -1054,16 +863,6 @@
 
       .close-btn:hover {
         background: rgba(255, 255, 255, 0.3);
-      }
-
-      .frame .resizer {
-        width: 12px;
-        height: 12px;
-        background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.7), rgba(var(--brand-secondary-rgb), 0.9));
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        cursor: se-resize;
       }
 
       .sheet-buttons {
@@ -1418,9 +1217,6 @@
           grid-template-columns: 1fr;
         }
 
-        .spotlight-meta {
-          width: 100%;
-        }
       }
 
       @media (max-width: 768px) {
@@ -1481,16 +1277,8 @@
           gap: 20px;
         }
 
-        .spotlight-meta {
-          align-items: center;
-          text-align: center;
-          gap: 12px;
-        }
-
-        .spotlight-hint {
-          justify-content: center;
-          text-align: center;
-          gap: 8px;
+        .spotlight-side-cards {
+          grid-template-columns: 1fr;
         }
 
         .spotlight-footer-inner {
@@ -1631,14 +1419,8 @@
       function initLockToggle() {
         var btn = document.getElementById('lock-toggle');
         if (!btn) return;
-        btn.addEventListener('click', function() {
-          framesLocked = !framesLocked;
-          btn.textContent = framesLocked ? 'Unlock' : 'Lock';
-          updateFloatingLockState();
-          if (!framesLocked) keepFramesInView();
-        });
-        btn.textContent = 'Unlock';
-        updateFloatingLockState();
+        btn.disabled = true;
+        btn.textContent = 'Auto Layout';
       }
 
       function init() {
@@ -1667,17 +1449,6 @@
             decrementLoad();
           })
           .getFrames();
-        incrementLoad();
-        google.script.run
-          .withSuccessHandler(function(layouts) {
-            initFloatingCards(layouts || {});
-            decrementLoad();
-          })
-          .withFailureHandler(function() {
-            initFloatingCards({});
-            decrementLoad();
-          })
-          .getFloatingLayouts();
         document.getElementById('add-frame').addEventListener('click', addFrame);
         initDriver();
         initHeaderTitle();
@@ -1687,10 +1458,6 @@
 
       var frames = [];
       var framesLoaded = false;
-      var framesLocked = true;
-      // Start frames above the driver carousel (z-index: 500)
-      var zIndex = 1100;
-
       var driverImages = [];
       var pendingLoads = 0;
       var loadingTimer = null;
@@ -1699,9 +1466,8 @@
       var maxPendingLoads = 0;
       var chartInstances = {};
       var frameIdCounter = 0;
-      var floatingLayouts = {};
-      var floatingCardsInitialized = false;
-      var floatingSaveTimer = null;
+      var carouselTimer = null;
+      var carouselIndex = 0;
       var DASHBOARD_EXEMPT_TITLES = ["Who's Off, When?", 'Ride-Along Schedule'];
 
       function shouldSkipDashboard(frame) {
@@ -3118,10 +2884,6 @@
       function addFrame() {
         var frame = {
           id: generateFrameId(),
-          x: 10,
-          y: 10,
-          width: 320,
-          height: 360,
           title: 'Frame',
           sheet: createDefaultSheet(3, 3),
           dashboard: createDefaultDashboard()
@@ -3136,15 +2898,11 @@
       function createFrame(frame, index) {
         ensureFrameMetadata(frame);
         var area = document.getElementById('viewing-area');
+        var grid = document.getElementById('frame-grid') || area;
         var div = document.createElement('div');
         div.className = 'frame';
-        div.style.left = frame.x + 'px';
-        div.style.top = frame.y + 'px';
-        div.style.width = frame.width + 'px';
-        div.style.height = frame.height + 'px';
         div.dataset.index = index;
         div.dataset.frameId = frame.id;
-        div.style.zIndex = zIndex++;
 
         var header = document.createElement('div');
         header.className = 'frame-header';
@@ -3187,10 +2945,6 @@
         div.appendChild(btnWrap);
         div.appendChild(sheetDiv);
         div.appendChild(dashboardDiv);
-
-        var resizer = document.createElement('div');
-        resizer.className = 'resizer';
-        div.appendChild(resizer);
 
         title.addEventListener('input', function() {
           var idx = parseInt(div.dataset.index, 10);
@@ -3241,10 +2995,7 @@
         renderSheet(sheetDiv, parseInt(div.dataset.index, 10));
         renderDashboard(dashboardDiv, parseInt(div.dataset.index, 10));
 
-        area.appendChild(div);
-
-        enableDrag(div);
-        enableResize(div, resizer);
+        grid.appendChild(div);
       }
 
       function createDefaultSheet(r, c) {
@@ -3274,6 +3025,23 @@
         if (typeof val !== 'string' || val.charAt(0) !== '=') return val;
         var expr = val.substring(1);
         expr = expr.replace(/\^/g, '**');
+        expr = expr.replace(/([A-Za-z0-9 _-]+)!([A-Z]+)(\d+)/g, function(_, frameName, col, row) {
+          var targetFrame = frames.find(function(candidate) {
+            return (
+              candidate &&
+              candidate.title &&
+              candidate.title.toLowerCase().trim() === frameName.toLowerCase().trim()
+            );
+          });
+          if (!targetFrame || !targetFrame.sheet) return 0;
+          var colIdx = lettersToIndex(col.toUpperCase());
+          var rowIdx = parseInt(row, 10) - 1;
+          if (rowIdx < 0 || colIdx < 0) return 0;
+          if (rowIdx >= targetFrame.sheet.rows || colIdx >= targetFrame.sheet.cols) return 0;
+          var refValue = targetFrame.sheet.data[rowIdx][colIdx];
+          if (typeof refValue === 'string' && refValue.charAt(0) === '=') return 0;
+          return refValue === '' || refValue == null ? 0 : refValue;
+        });
         expr = expr.replace(/([A-Z]+)(\d+)/g, function(_, col, row) {
           var colIdx = lettersToIndex(col);
           var rowIdx = parseInt(row, 10) - 1;
@@ -3427,377 +3195,27 @@
         });
       }
 
-      function parseNumber(value, fallback) {
-        var num = parseFloat(value);
-        return isFinite(num) ? num : fallback;
-      }
-
-      function sanitizeFloatingLayouts(raw) {
-        var cleaned = {};
-        if (!raw || typeof raw !== 'object') return cleaned;
-        Object.keys(raw).forEach(function(key) {
-          var source = raw[key];
-          if (!source || typeof source !== 'object') return;
-          var entry = {};
-          ['x', 'y', 'width', 'height'].forEach(function(prop) {
-            var val = parseFloat(source[prop]);
-            if (isFinite(val)) {
-              entry[prop] = val;
-            }
-          });
-          cleaned[key] = entry;
-        });
-        return cleaned;
-      }
-
-      function measureFloatingCard(el) {
-        var target = el.querySelector('.floating-card-inner') || el;
-        var rect = target.getBoundingClientRect();
-        var width = rect.width || target.offsetWidth || 320;
-        var height = rect.height || target.offsetHeight || 220;
-        return { width: width, height: height };
-      }
-
-      function updateFloatingLayout(id, partial) {
-        if (!floatingLayouts[id]) floatingLayouts[id] = {};
-        Object.keys(partial || {}).forEach(function(key) {
-          var value = parseFloat(partial[key]);
-          if (isFinite(value)) {
-            floatingLayouts[id][key] = value;
-          }
-        });
-      }
-
-      function scheduleFloatingSave() {
-        if (!floatingCardsInitialized) return;
-        if (floatingSaveTimer) clearTimeout(floatingSaveTimer);
-        floatingSaveTimer = setTimeout(function() {
-          floatingSaveTimer = null;
-          google.script.run.saveFloatingLayouts(floatingLayouts);
-        }, 220);
-      }
-
-      function enableFloatingCardDrag(el, id) {
-        el.addEventListener('mousedown', function(e) {
-          if (framesLocked) return;
-          if (e.button !== 0) return;
-          if (e.target.closest('.floating-resizer')) return;
-          if (e.target.closest('input, textarea, button, select, a, [contenteditable="true"]'))
-            return;
-          e.preventDefault();
-          var area = document.getElementById('viewing-area');
-          if (!area) return;
-          var rect = area.getBoundingClientRect();
-          var startX = e.clientX;
-          var startY = e.clientY;
-          var startLeft = el.offsetLeft;
-          var startTop = el.offsetTop;
-          el.style.zIndex = zIndex++;
-          function move(ev) {
-            var width = el.offsetWidth;
-            var height = el.offsetHeight;
-            var x = startLeft + ev.clientX - startX;
-            var y = startTop + ev.clientY - startY;
-            x = Math.max(0, Math.min(x, Math.max(0, rect.width - width)));
-            y = Math.max(0, Math.min(y, Math.max(0, rect.height - height)));
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-            updateFloatingLayout(id, { x: x, y: y });
-          }
-          function up() {
-            document.removeEventListener('mousemove', move);
-            document.removeEventListener('mouseup', up);
-            document.removeEventListener('mouseleave', up);
-            scheduleFloatingSave();
-          }
-          document.addEventListener('mousemove', move);
-          document.addEventListener('mouseup', up);
-          document.addEventListener('mouseleave', up);
-        });
-      }
-
-      function enableFloatingCardResize(el, handle, id) {
-        handle.addEventListener('mousedown', function(e) {
-          if (framesLocked) return;
-          e.preventDefault();
-          e.stopPropagation();
-          var area = document.getElementById('viewing-area');
-          if (!area) return;
-          var rect = area.getBoundingClientRect();
-          var startX = e.clientX;
-          var startY = e.clientY;
-          var startW = el.offsetWidth;
-          var startH = el.offsetHeight;
-          var minWidth = parseNumber(el.dataset.minWidth, 200);
-          var minHeight = parseNumber(el.dataset.minHeight, 160);
-          el.style.zIndex = zIndex++;
-          function move(ev) {
-            var width = startW + ev.clientX - startX;
-            var height = startH + ev.clientY - startY;
-            width = Math.max(minWidth, Math.min(width, Math.max(0, rect.width - el.offsetLeft)));
-            height = Math.max(minHeight, Math.min(height, Math.max(0, rect.height - el.offsetTop)));
-            el.style.width = width + 'px';
-            el.style.height = height + 'px';
-            updateFloatingLayout(id, { width: width, height: height });
-          }
-          function up() {
-            document.removeEventListener('mousemove', move);
-            document.removeEventListener('mouseup', up);
-            document.removeEventListener('mouseleave', up);
-            scheduleFloatingSave();
-          }
-          document.addEventListener('mousemove', move);
-          document.addEventListener('mouseup', up);
-          document.addEventListener('mouseleave', up);
-        });
-      }
-
-      function updateFloatingLockState() {
-        var cards = document.querySelectorAll('.viewing-area [data-floating-card]');
-        cards.forEach(function(card) {
-          if (framesLocked) {
-            card.classList.add('is-locked');
-          } else {
-            card.classList.remove('is-locked');
-          }
-        });
-      }
-
-      function initFloatingCards(rawLayouts) {
-        var area = document.getElementById('viewing-area');
-        if (!area) return;
-        floatingCardsInitialized = false;
-        floatingLayouts = {};
-        var sanitized = sanitizeFloatingLayouts(rawLayouts);
-        var rect = area.getBoundingClientRect();
-        if (!rect.width) rect.width = area.offsetWidth || 0;
-        if (!rect.height) rect.height = area.offsetHeight || 0;
-        var cards = area.querySelectorAll('[data-floating-card]');
-        cards.forEach(function(card) {
-          var id = card.dataset.floatingCard;
-          if (!id) return;
-          var measurement = measureFloatingCard(card);
-          var defaults = {
-            x: parseNumber(card.dataset.defaultX, 24),
-            y: parseNumber(card.dataset.defaultY, 24),
-            width: parseNumber(card.dataset.defaultWidth, measurement.width),
-            height: parseNumber(card.dataset.defaultHeight, measurement.height),
-            minWidth: parseNumber(card.dataset.minWidth, Math.min(measurement.width, 240)),
-            minHeight: parseNumber(card.dataset.minHeight, Math.min(measurement.height, 180))
-          };
-          card.dataset.minWidth = defaults.minWidth;
-          card.dataset.minHeight = defaults.minHeight;
-          var saved = sanitized[id] || {};
-          var width = parseNumber(saved.width, defaults.width);
-          var height = parseNumber(saved.height, defaults.height);
-          width = Math.max(defaults.minWidth, width);
-          height = Math.max(defaults.minHeight, height);
-          if (rect.width) width = Math.min(width, rect.width);
-          if (rect.height) height = Math.min(height, rect.height);
-          var x = parseNumber(saved.x, defaults.x);
-          var y = parseNumber(saved.y, defaults.y);
-          if (rect.width) x = Math.max(0, Math.min(x, Math.max(0, rect.width - width)));
-          if (rect.height) y = Math.max(0, Math.min(y, Math.max(0, rect.height - height)));
-          card.style.width = width + 'px';
-          card.style.height = height + 'px';
-          card.style.left = x + 'px';
-          card.style.top = y + 'px';
-          card.style.zIndex = zIndex++;
-          floatingLayouts[id] = { x: x, y: y, width: width, height: height };
-          enableFloatingCardDrag(card, id);
-          var handle = card.querySelector('[data-floating-resizer]');
-          if (handle) enableFloatingCardResize(card, handle, id);
-        });
-        floatingCardsInitialized = true;
-        updateFloatingLockState();
-      }
-
-      function enableDrag(el) {
-        var startX, startY, startLeft, startTop, idx;
-
-        el.addEventListener('mousedown', function(e) {
-          if (framesLocked) return;
-          if (
-            e.target.classList.contains('resizer') ||
-            e.target.classList.contains('frame-title') ||
-            e.target.closest('.spreadsheet') ||
-            e.target.classList.contains('sheet-btn') ||
-            e.target.closest('.dashboard')
-          )
-            return;
-          e.preventDefault();
-          idx = parseInt(el.dataset.index, 10);
-          startX = e.clientX;
-          startY = e.clientY;
-          startLeft = el.offsetLeft;
-          startTop = el.offsetTop;
-          el.style.zIndex = zIndex++;
-          function move(ev) {
-            var area = document.getElementById('viewing-area');
-            var rect = area.getBoundingClientRect();
-            var x = startLeft + ev.clientX - startX;
-            var y = startTop + ev.clientY - startY;
-            x = Math.max(0, Math.min(x, rect.width - el.offsetWidth));
-            y = Math.max(0, Math.min(y, rect.height - el.offsetHeight));
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-            frames[idx].x = x;
-            frames[idx].y = y;
-          }
-          function up() {
-            document.removeEventListener('mousemove', move);
-            document.removeEventListener('mouseup', up);
-            document.removeEventListener('mouseleave', up);
-            saveFrames();
-          }
-          document.addEventListener('mousemove', move);
-          document.addEventListener('mouseup', up);
-          document.addEventListener('mouseleave', up);
-        });
-      }
-
-      function enableResize(el, handle) {
-        var startX, startY, startW, startH, idx;
-
-        handle.addEventListener('mousedown', function(e) {
-          if (framesLocked) return;
-          e.stopPropagation();
-          e.preventDefault();
-          idx = parseInt(el.dataset.index, 10);
-          startX = e.clientX;
-          startY = e.clientY;
-          startW = el.offsetWidth;
-          startH = el.offsetHeight;
-          el.style.zIndex = zIndex++;
-          function move(ev) {
-            var area = document.getElementById('viewing-area');
-            var rect = area.getBoundingClientRect();
-            var width = startW + ev.clientX - startX;
-            var height = startH + ev.clientY - startY;
-            width = Math.max(50, Math.min(width, rect.width - el.offsetLeft));
-            height = Math.max(50, Math.min(height, rect.height - el.offsetTop));
-            el.style.width = width + 'px';
-            el.style.height = height + 'px';
-            frames[idx].width = width;
-            frames[idx].height = height;
-          }
-          function up() {
-            document.removeEventListener('mousemove', move);
-            document.removeEventListener('mouseup', up);
-            document.removeEventListener('mouseleave', up);
-            saveFrames();
-          }
-          document.addEventListener('mousemove', move);
-          document.addEventListener('mouseup', up);
-          document.addEventListener('mouseleave', up);
-      });
-      }
-
       function keepFramesInView() {
-        if (!framesLoaded || framesLocked) return;
-        var area = document.getElementById('viewing-area');
-        var rect = area.getBoundingClientRect();
-        var children = document.querySelectorAll('.viewing-area .frame');
-        children.forEach(function(el) {
-          var idx = parseInt(el.dataset.index, 10);
-          var x = Math.max(0, Math.min(el.offsetLeft, rect.width - el.offsetWidth));
-          var y = Math.max(0, Math.min(el.offsetTop, rect.height - el.offsetHeight));
-          var width = Math.max(50, Math.min(el.offsetWidth, rect.width - x));
-          var height = Math.max(50, Math.min(el.offsetHeight, rect.height - y));
-          el.style.left = x + 'px';
-          el.style.top = y + 'px';
-          el.style.width = width + 'px';
-          el.style.height = height + 'px';
-          frames[idx].x = x;
-          frames[idx].y = y;
-          frames[idx].width = width;
-          frames[idx].height = height;
-        });
+        if (!framesLoaded) return;
         saveFrames();
-
-        var floatingChanged = false;
-        var floatingCards = document.querySelectorAll('.viewing-area [data-floating-card]');
-        floatingCards.forEach(function(card) {
-          var id = card.dataset.floatingCard;
-          if (!id) return;
-          var minWidth = parseNumber(card.dataset.minWidth, 200);
-          var minHeight = parseNumber(card.dataset.minHeight, 160);
-          var currentLeft = card.offsetLeft;
-          var currentTop = card.offsetTop;
-          var currentWidth = card.offsetWidth;
-          var currentHeight = card.offsetHeight;
-          var width = Math.max(minWidth, Math.min(currentWidth, Math.max(0, rect.width - currentLeft)));
-          var height = Math.max(minHeight, Math.min(currentHeight, Math.max(0, rect.height - currentTop)));
-          var x = Math.max(0, Math.min(currentLeft, Math.max(0, rect.width - width)));
-          var y = Math.max(0, Math.min(currentTop, Math.max(0, rect.height - height)));
-          if (Math.abs(x - currentLeft) > 0.5) card.style.left = x + 'px';
-          if (Math.abs(y - currentTop) > 0.5) card.style.top = y + 'px';
-          if (Math.abs(width - currentWidth) > 0.5) card.style.width = width + 'px';
-          if (Math.abs(height - currentHeight) > 0.5) card.style.height = height + 'px';
-          var layout = floatingLayouts[id] || {};
-          if (
-            !layout ||
-            layout.x !== x ||
-            layout.y !== y ||
-            layout.width !== width ||
-            layout.height !== height
-          ) {
-            floatingLayouts[id] = { x: x, y: y, width: width, height: height };
-            floatingChanged = true;
-          }
-        });
-        if (floatingChanged) {
-          scheduleFloatingSave();
-        }
       }
 
       window.addEventListener('resize', keepFramesInView);
 
-      function shuffle(list) {
-        var copy = list.slice();
-        for (var i = copy.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var temp = copy[i];
-          copy[i] = copy[j];
-          copy[j] = temp;
-        }
-        return copy;
-      }
-
-      function setDriverImages(list, options) {
-        var images = Array.isArray(list) ? list.slice() : [];
-        var shouldShuffle = !options || options.shuffle !== false;
-        if (shouldShuffle && images.length > 1) {
-          images = shuffle(images);
-        }
-        driverImages = images;
+      function setDriverImages(list) {
+        driverImages = Array.isArray(list) ? list.slice() : [];
+        carouselIndex = 0;
         updateSpotlightMeta();
       }
 
       function updateSpotlightMeta() {
-        var meta = document.getElementById('carousel-meta');
-        var countEl = document.getElementById('carousel-count');
-        var statusEl = document.getElementById('carousel-status');
-        if (!countEl) return;
+        var intro = document.querySelector('.spotlight-intro');
+        if (!intro) return;
         var count = driverImages.length;
-        if (meta) {
-          meta.classList.toggle('is-empty', count === 0);
-        }
         if (count === 0) {
-          countEl.textContent = 'No spotlight photos yet';
-          if (statusEl) {
-            statusEl.textContent = 'Upload driver images to start the rotation.';
-          }
-        } else if (count === 1) {
-          countEl.textContent = 'Showing 1 driver photo';
-          if (statusEl) {
-            statusEl.textContent = 'Add more images to create a rotating spotlight.';
-          }
+          intro.textContent = 'Upload driver images to start the spotlight.';
         } else {
-          countEl.textContent = 'Rotating ' + count + ' driver photos';
-          if (statusEl) {
-            statusEl.textContent = 'Images advance automatically for the big screen display.';
-          }
+          intro.textContent = 'Showing one zoomed image at a time.';
         }
       }
 
@@ -3818,233 +3236,33 @@
         });
       }
 
-      function createCarouselTrack(config) {
-        var track = document.createElement('div');
-        track.className = 'carousel-track is-preparing';
-        track.id = config.trackId;
-
-        var decodeTasks = [];
-
-        function waitForImage(img) {
-          if (typeof img.decode === 'function') {
-            decodeTasks.push(
-              img.decode().catch(function() {
-                /* Ignore decode failures and fall back to onload */
-              })
-            );
-            return;
-          }
-
-          if (img.complete) {
-            return;
-          }
-
-          decodeTasks.push(
-            new Promise(function(resolve) {
-              img.onload = img.onerror = function() {
-                resolve();
-              };
-            })
-          );
-        }
-
-        var baseSequence = driverImages.slice();
-
-        if (!baseSequence.length) {
-          return {
-            element: track,
-            ready: Promise.resolve()
-          };
-        }
-
-        var minItems = Math.max(1, config.minItems || 0);
-        var expandedSequence = baseSequence.slice();
-        var sourceSequence = baseSequence.slice();
-
-        while (expandedSequence.length < minItems && sourceSequence.length) {
-          expandedSequence = expandedSequence.concat(sourceSequence);
-        }
-
-        var maxItems = baseSequence.length * 6 || expandedSequence.length;
-        if (expandedSequence.length > maxItems) {
-          expandedSequence = expandedSequence.slice(0, maxItems);
-        }
-
-        var loops = [expandedSequence.slice(), expandedSequence.slice()];
-
-        loops.forEach(function(sequence) {
-          sequence.forEach(function(src) {
-            var item = document.createElement('div');
-            item.className = 'carousel-item';
-            var img = document.createElement('img');
-            img.src = src;
-            img.alt = '';
-            waitForImage(img);
-            item.appendChild(img);
-            track.appendChild(item);
-          });
-        });
-
-        var duration = Number(config.duration);
-        if (!isFinite(duration) || duration <= 0) {
-          duration = Math.max(18, expandedSequence.length * 5);
-        }
-
-        track.style.setProperty('--carousel-speed', duration.toFixed(2) + 's');
-
-        return {
-          element: track,
-          ready: Promise.all(decodeTasks).catch(function() {
-            /* Intentionally swallow decode errors */
-          })
-        };
+      function renderCarouselImage(index) {
+        var track = document.getElementById('carousel-track');
+        if (!track) return;
+        track.replaceChildren();
+        if (!driverImages.length) return;
+        var imageIndex = ((index % driverImages.length) + driverImages.length) % driverImages.length;
+        var item = document.createElement('div');
+        item.className = 'carousel-item';
+        var img = document.createElement('img');
+        img.src = driverImages[imageIndex];
+        img.alt = 'Driver spotlight photo ' + (imageIndex + 1);
+        item.appendChild(img);
+        track.appendChild(item);
       }
 
       function startCarousel() {
-        var placeholder = document.getElementById('carousel-track');
-        if (!placeholder) return;
-
-        var container = placeholder.parentNode;
+        if (carouselTimer) {
+          clearInterval(carouselTimer);
+          carouselTimer = null;
+        }
         updateSpotlightMeta();
-
-        if (driverImages.length === 0) {
-          placeholder.replaceChildren();
-          placeholder.classList.add('is-active');
-          placeholder.classList.remove('is-layered', 'is-entering', 'is-exiting', 'is-preparing');
-          placeholder.removeAttribute('aria-hidden');
-          placeholder.style.removeProperty('--carousel-speed');
-          container.classList.remove('is-transitioning');
-          container.style.removeProperty('--carousel-height');
-          delete container.dataset.carouselToken;
-          return;
-        }
-
-        var carousel = document.getElementById('driver-carousel');
-        var windowEl = carousel ? carousel.querySelector('.carousel-window') : null;
-        var viewHeight = windowEl ? windowEl.offsetHeight : 0;
-        if (!viewHeight && carousel) {
-          viewHeight = carousel.offsetHeight;
-        }
-        var baseItemHeight = 420;
-        var minItems = 5;
-
-        if (windowEl) {
-          var windowStyles = window.getComputedStyle(windowEl);
-          var paddingTop = parseFloat(windowStyles.paddingTop) || 0;
-          var paddingBottom = parseFloat(windowStyles.paddingBottom) || 0;
-          var paddingLeft = parseFloat(windowStyles.paddingLeft) || 0;
-          var paddingRight = parseFloat(windowStyles.paddingRight) || 0;
-          var availableWidth = windowEl.clientWidth;
-          if (!availableWidth) {
-            availableWidth = windowEl.offsetWidth;
-          }
-          availableWidth = Math.max(availableWidth - paddingLeft - paddingRight, 0);
-          if (availableWidth > 0) {
-            baseItemHeight = Math.max(baseItemHeight, availableWidth * 0.62);
-          }
-          if (!viewHeight) {
-            viewHeight = Math.max(windowEl.offsetHeight - (paddingTop + paddingBottom), 0);
-          }
-        }
-
-        if (viewHeight) {
-          minItems = Math.max(minItems, Math.ceil(viewHeight / Math.max(baseItemHeight, 1)) + 2);
-        }
-
-        var trackId = placeholder.id || 'carousel-track';
-        var uniqueCount = Math.max(driverImages.length, 1);
-        var duration = Math.max(28, uniqueCount * 8);
-        duration = Math.max(duration, minItems * 5);
-
-        var config = {
-          trackId: trackId,
-          minItems: minItems,
-          duration: duration
-        };
-
-        var activeTrack = container.querySelector('.carousel-track.is-active') || placeholder;
-        var isInitialRender = !activeTrack.children.length;
-        var transitionToken = Date.now().toString(36) + Math.random().toString(36).slice(2);
-        container.dataset.carouselToken = transitionToken;
-
-        Array.from(container.querySelectorAll('.carousel-track.is-layered.is-exiting')).forEach(function(node) {
-          if (node !== activeTrack && node.parentNode === container) {
-            container.removeChild(node);
-          }
-        });
-
-        var build = createCarouselTrack(config);
-
-        var finalize = function() {
-          if (container.dataset.carouselToken === transitionToken) {
-            container.classList.remove('is-transitioning');
-            container.style.removeProperty('--carousel-height');
-            delete container.dataset.carouselToken;
-          }
-        };
-
-        build.ready.then(function() {
-          if (container.dataset.carouselToken !== transitionToken) {
-            return;
-          }
-
-          var newTrack = build.element;
-
-          if (!container.contains(activeTrack)) {
-            activeTrack = container.querySelector('.carousel-track.is-active') || placeholder;
-          }
-
-          if (isInitialRender) {
-            newTrack.classList.remove('is-preparing');
-            newTrack.classList.add('is-active');
-            container.replaceChild(newTrack, activeTrack);
-            finalize();
-            return;
-          }
-
-          var previousHeight = container.offsetHeight;
-          container.style.setProperty('--carousel-height', previousHeight + 'px');
-          container.classList.add('is-transitioning');
-
-          activeTrack.setAttribute('aria-hidden', 'true');
-          activeTrack.classList.add('is-layered');
-          activeTrack.classList.remove('is-active');
-          if (activeTrack.id === trackId) {
-            activeTrack.removeAttribute('id');
-          }
-
-          newTrack.setAttribute('aria-hidden', 'true');
-          newTrack.classList.add('is-layered', 'is-entering');
-          newTrack.id = trackId;
-          container.appendChild(newTrack);
-
-          requestAnimationFrame(function() {
-            var nextHeight = Math.max(0, newTrack.offsetHeight);
-            container.style.setProperty('--carousel-height', nextHeight + 'px');
-            newTrack.classList.remove('is-entering', 'is-preparing');
-            newTrack.classList.add('is-active');
-            newTrack.removeAttribute('aria-hidden');
-            activeTrack.classList.add('is-exiting');
-          });
-
-          var handleTransitionEnd = function(event) {
-            if (event.propertyName !== 'opacity') {
-              return;
-            }
-
-            newTrack.removeEventListener('transitionend', handleTransitionEnd);
-
-            if (activeTrack.parentNode === container) {
-              container.removeChild(activeTrack);
-            }
-
-            newTrack.classList.remove('is-layered');
-            newTrack.removeAttribute('aria-hidden');
-            finalize();
-          };
-
-          newTrack.addEventListener('transitionend', handleTransitionEnd);
-        });
+        renderCarouselImage(carouselIndex);
+        if (driverImages.length <= 1) return;
+        carouselTimer = setInterval(function() {
+          carouselIndex = (carouselIndex + 1) % driverImages.length;
+          renderCarouselImage(carouselIndex);
+        }, 5000);
       }
 
     </script>
@@ -4103,47 +3321,7 @@
             <h2>Today's Operations</h2>
           </div>
           <div id="viewing-area" class="viewing-area">
-            <div
-              class="floating-card"
-              data-floating-card="driver-week"
-              data-default-x="24"
-              data-default-y="24"
-              data-default-width="320"
-              data-default-height="260"
-              data-min-width="260"
-              data-min-height="220"
-              style="left:24px;top:24px;width:320px;"
-            >
-              <div id="driver-week" class="floating-card-inner sidebar-card driver-week">
-                <div class="card-header">
-                  <h2>Driver of the Week</h2>
-                  <span class="card-subtitle">Celebrate wins and keep the team inspired.</span>
-                </div>
-                <label for="driver-name">Driver name</label>
-                <input type="text" id="driver-name" placeholder="Enter name">
-              </div>
-              <div class="floating-resizer" data-floating-resizer aria-hidden="true"></div>
-            </div>
-            <div
-              class="floating-card"
-              data-floating-card="team-message"
-              data-default-x="24"
-              data-default-y="320"
-              data-default-width="320"
-              data-default-height="220"
-              data-min-width="260"
-              data-min-height="200"
-              style="left:24px;top:320px;width:320px;"
-            >
-              <div class="floating-card-inner sidebar-card quote-card">
-                <div class="card-header">
-                  <h2>Team Message</h2>
-                  <span class="card-subtitle">Quote of the Day/Week</span>
-                </div>
-                <p id="weekly-quote">Loading quote...</p>
-              </div>
-              <div class="floating-resizer" data-floating-resizer aria-hidden="true"></div>
-            </div>
+            <div id="frame-grid" class="frame-grid"></div>
           </div>
         </section>
         <aside class="sidebar">
@@ -4159,26 +3337,27 @@
               </div>
             </header>
             <div class="spotlight-body">
-              <div
-                id="carousel-meta"
-                class="spotlight-meta is-empty"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                <p id="carousel-count" class="spotlight-count">No spotlight photos yet</p>
-                <p id="carousel-status" class="spotlight-status">
-                  Upload driver images to start the rotation.
-                </p>
-                <div class="spotlight-hint">
-                  <span class="hint-icon" aria-hidden="true">⬆</span>
-                  <span>Use the Upload button above to add new driver portraits.</span>
+              <div class="spotlight-side-cards">
+                <div id="driver-week" class="floating-card-inner sidebar-card driver-week">
+                  <div class="card-header">
+                    <h2>Driver of the Week</h2>
+                    <span class="card-subtitle">Celebrate wins and keep the team inspired.</span>
+                  </div>
+                  <label for="driver-name">Driver name</label>
+                  <input type="text" id="driver-name" placeholder="Enter name">
+                </div>
+                <div class="floating-card-inner sidebar-card quote-card">
+                  <div class="card-header">
+                    <h2>Team Message</h2>
+                    <span class="card-subtitle">Quote of the Day/Week</span>
+                  </div>
+                  <p id="weekly-quote">Loading quote...</p>
                 </div>
               </div>
               <div
                 class="carousel-window"
                 role="region"
                 aria-labelledby="driver-spotlight-title"
-                aria-describedby="carousel-status"
               >
                 <div id="carousel-track" class="carousel-track"></div>
               </div>
