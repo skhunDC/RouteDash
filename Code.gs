@@ -20,6 +20,7 @@ function getDashboardTemplate() {
 }
 
 var DASHBOARD_LOG_SHEET_NAME = 'Route Dashboard Logs';
+var DASHBOARD_FRAME_SHEET_NAME = 'Route Dashboard Frames';
 
 function getOrCreateLogSheet() {
   var props = PropertiesService.getScriptProperties();
@@ -108,13 +109,127 @@ function getWeather() {
 
 function getFrames() {
   var props = PropertiesService.getScriptProperties();
+  var frames = getFramesFromSheet();
+  if (frames && frames.length) {
+    return frames;
+  }
   var data = props.getProperty('frames');
   return data ? JSON.parse(data) : [];
 }
 
 function saveFrames(frames) {
-  PropertiesService.getScriptProperties().setProperty('frames', JSON.stringify(frames));
+  var safeFrames = Array.isArray(frames) ? frames : [];
+  PropertiesService.getScriptProperties().setProperty('frames', JSON.stringify(safeFrames));
+  saveFramesToSheet(safeFrames);
   logDashboardUpdate('Saved frames', 'Count: ' + (frames ? frames.length : 0));
+}
+
+function getOrCreateFrameSheet() {
+  var props = PropertiesService.getScriptProperties();
+  var sheetId = props.getProperty('frameSpreadsheetId');
+  var spreadsheet = null;
+
+  if (sheetId) {
+    try {
+      spreadsheet = SpreadsheetApp.openById(sheetId);
+    } catch (e) {
+      spreadsheet = null;
+    }
+  }
+
+  if (!spreadsheet) {
+    spreadsheet = SpreadsheetApp.create(DASHBOARD_FRAME_SHEET_NAME);
+    props.setProperty('frameSpreadsheetId', spreadsheet.getId());
+  }
+
+  var sheet = spreadsheet.getSheetByName(DASHBOARD_FRAME_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(DASHBOARD_FRAME_SHEET_NAME);
+  }
+
+  if (sheet.getLastRow() === 0) {
+    sheet
+      .getRange(1, 1, 1, 7)
+      .setValues([['Frame Id', 'Title', 'Rows', 'Columns', 'Sheet JSON', 'Dashboard JSON', 'Updated At']]);
+  }
+
+  return sheet;
+}
+
+function saveFramesToSheet(frames) {
+  try {
+    var sheet = getOrCreateFrameSheet();
+    var lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      sheet.getRange(2, 1, lastRow - 1, 7).clearContent();
+    }
+    if (!frames.length) return;
+
+    var values = frames.map(function(frame) {
+      var sheetState = frame && frame.sheet ? frame.sheet : {};
+      var rows = Number(sheetState.rows) || 0;
+      var cols = Number(sheetState.cols) || 0;
+      return [
+        frame.id || '',
+        frame.title || 'Frame',
+        rows,
+        cols,
+        JSON.stringify(sheetState),
+        JSON.stringify(frame.dashboard || {}),
+        new Date()
+      ];
+    });
+
+    sheet.getRange(2, 1, values.length, 7).setValues(values);
+  } catch (e) {
+    // keep Script Properties as fallback when Sheet sync fails
+  }
+}
+
+function getFramesFromSheet() {
+  try {
+    var sheet = getOrCreateFrameSheet();
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return [];
+    var values = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+    return values
+      .map(function(row) {
+        var id = row[0] || '';
+        var title = row[1] || 'Frame';
+        var sheetJson = row[4] || '';
+        var dashboardJson = row[5] || '';
+        if (!sheetJson) return null;
+        var sheetState = null;
+        var dashboardState = {};
+        try {
+          sheetState = JSON.parse(sheetJson);
+        } catch (e) {
+          return null;
+        }
+        if (dashboardJson) {
+          try {
+            dashboardState = JSON.parse(dashboardJson);
+          } catch (e) {
+            dashboardState = {};
+          }
+        }
+        return {
+          id: id,
+          title: title,
+          sheet: sheetState,
+          dashboard: dashboardState,
+          x: 0,
+          y: 0,
+          width: 320,
+          height: 360
+        };
+      })
+      .filter(function(frame) {
+        return frame !== null;
+      });
+  } catch (e) {
+    return [];
+  }
 }
 
 function getFloatingLayouts() {
