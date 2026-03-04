@@ -365,8 +365,10 @@
 
       .frame-grid {
         min-width: 0;
-        columns: 280px;
-        column-gap: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 16px;
       }
 
       .sidebar-frame-grid {
@@ -768,9 +770,8 @@
       .frame {
         position: relative;
         display: inline-flex;
-        width: 100%;
-        margin: 0 0 16px;
-        break-inside: avoid;
+        width: min(100%, var(--frame-width, 360px));
+        margin: 0;
         align-self: start;
         border-radius: 22px;
         border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
@@ -876,7 +877,8 @@
       }
 
       .spreadsheet table {
-        width: 100%;
+        width: max-content;
+        min-width: 100%;
         border-collapse: collapse;
         table-layout: fixed;
         font-size: var(--sheet-font-size, 0.85rem);
@@ -884,6 +886,7 @@
 
       .spreadsheet th,
       .spreadsheet td {
+        position: relative;
         border: 1px solid rgba(31, 41, 55, 0.12);
         padding: var(--sheet-cell-padding, 6px 8px);
         text-align: center;
@@ -898,6 +901,34 @@
         font-weight: 600;
         background: rgba(var(--brand-primary-rgb), 0.12);
         color: var(--brand-dark);
+      }
+
+      .column-resizer {
+        position: absolute;
+        top: 0;
+        right: -3px;
+        width: 8px;
+        height: 100%;
+        cursor: col-resize;
+        user-select: none;
+        touch-action: none;
+        z-index: 3;
+      }
+
+      .column-resizer::after {
+        content: '';
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        left: 3px;
+        width: 2px;
+        border-radius: 2px;
+        background: rgba(var(--brand-primary-rgb), 0.18);
+        transition: background 0.2s ease;
+      }
+
+      .spreadsheet th:hover .column-resizer::after {
+        background: rgba(var(--brand-primary-rgb), 0.5);
       }
 
       .dashboard {
@@ -1283,7 +1314,12 @@
         }
 
         .frame-grid {
-          columns: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .frame {
+          width: 100%;
         }
 
       }
@@ -1716,6 +1752,25 @@
           frame.dashboard = createDefaultDashboard();
           updated = true;
         }
+        if (!frame.sheet || typeof frame.sheet !== 'object') {
+          frame.sheet = createDefaultSheet(3, 3);
+          updated = true;
+        }
+        if (!Array.isArray(frame.sheet.columnWidths)) {
+          frame.sheet.columnWidths = [];
+          updated = true;
+        }
+        for (var cw = 0; cw < frame.sheet.cols; cw++) {
+          var width = frame.sheet.columnWidths[cw];
+          if (typeof width !== 'number' || !isFinite(width) || width < 70) {
+            frame.sheet.columnWidths[cw] = 140;
+            updated = true;
+          }
+        }
+        if (frame.sheet.columnWidths.length > frame.sheet.cols) {
+          frame.sheet.columnWidths = frame.sheet.columnWidths.slice(0, frame.sheet.cols);
+          updated = true;
+        }
         var allowedCharts = ['line', 'bar', 'pie'];
         if (allowedCharts.indexOf(frame.dashboard.chartType) === -1) {
           frame.dashboard.chartType = 'line';
@@ -1767,6 +1822,27 @@
           updated = true;
         }
         return updated;
+      }
+
+      function getFrameWidthFromColumns(frame) {
+        if (!frame || !frame.sheet) return 360;
+        var widths = Array.isArray(frame.sheet.columnWidths) ? frame.sheet.columnWidths : [];
+        var cols = Math.max(1, frame.sheet.cols || widths.length || 1);
+        var total = 0;
+        for (var i = 0; i < cols; i++) {
+          var current = widths[i];
+          if (typeof current !== 'number' || !isFinite(current) || current < 70) {
+            current = 140;
+          }
+          total += current;
+        }
+        var frameChrome = 48;
+        return Math.max(280, Math.min(1100, total + frameChrome));
+      }
+
+      function applyFrameWidth(frameElement, frame) {
+        if (!frameElement || !frame) return;
+        frameElement.style.setProperty('--frame-width', getFrameWidthFromColumns(frame) + 'px');
       }
 
       function applyFrameLayout(frameElement, frame) {
@@ -2980,6 +3056,7 @@
 
         renderSheet(sheetDiv, parseInt(div.dataset.index, 10));
         renderDashboard(dashboardDiv, parseInt(div.dataset.index, 10));
+        applyFrameWidth(div, frame);
 
         grid.appendChild(div);
         moveFrameToCorrectContainer(div, frame);
@@ -3059,6 +3136,18 @@
         evaluateSheet(sheet);
         container.innerHTML = '';
         var table = document.createElement('table');
+        var colgroup = document.createElement('colgroup');
+        for (var colIdx = 0; colIdx < sheet.cols; colIdx++) {
+          var colEl = document.createElement('col');
+          var colWidth = sheet.columnWidths[colIdx];
+          if (typeof colWidth !== 'number' || !isFinite(colWidth) || colWidth < 70) {
+            colWidth = 140;
+            sheet.columnWidths[colIdx] = colWidth;
+          }
+          colEl.style.width = colWidth + 'px';
+          colgroup.appendChild(colEl);
+        }
+        table.appendChild(colgroup);
         var tbody = document.createElement('tbody');
 
         // Determine if there is a column titled "Diff" or "$ Diff"
@@ -3077,7 +3166,8 @@
         for (var r = 0; r < sheet.rows; r++) {
           var tr = document.createElement('tr');
           for (var c = 0; c < sheet.cols; c++) {
-            var td = document.createElement('td');
+            var isHeaderRow = r === 0;
+            var td = document.createElement(isHeaderRow ? 'th' : 'td');
             td.contentEditable = true;
             td.textContent = sheet.computed[r][c];
             td.dataset.r = r;
@@ -3101,16 +3191,51 @@
             }
 
             (function(ridx, cidx, cell) {
+              var resizing = false;
               cell.addEventListener('focus', function() {
+                if (resizing) return;
                 cell.textContent = sheet.data[ridx][cidx] || '';
               });
               cell.addEventListener('blur', function() {
+                if (resizing) return;
                 sheet.data[ridx][cidx] = cell.textContent;
                 evaluateSheet(sheet);
                 renderSheet(container, index);
                 saveFrames();
                 refreshDashboard(index);
               });
+
+              if (ridx === 0) {
+                var resizer = document.createElement('span');
+                resizer.className = 'column-resizer';
+                resizer.setAttribute('aria-label', 'Resize column');
+                resizer.addEventListener('mousedown', function(evt) {
+                  evt.preventDefault();
+                  evt.stopPropagation();
+                  resizing = true;
+                  var startX = evt.clientX;
+                  var startWidth = sheet.columnWidths[cidx] || 140;
+                  function onMove(moveEvt) {
+                    var delta = moveEvt.clientX - startX;
+                    var next = Math.max(70, startWidth + delta);
+                    sheet.columnWidths[cidx] = next;
+                    if (colgroup.children[cidx]) {
+                      colgroup.children[cidx].style.width = next + 'px';
+                    }
+                    var frameElement = container.closest('.frame');
+                    applyFrameWidth(frameElement, frames[index]);
+                  }
+                  function onUp() {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    resizing = false;
+                    saveFrames();
+                  }
+                  document.addEventListener('mousemove', onMove);
+                  document.addEventListener('mouseup', onUp);
+                });
+                cell.appendChild(resizer);
+              }
             })(r, c, td);
             tr.appendChild(td);
           }
@@ -3119,6 +3244,7 @@
         table.appendChild(tbody);
         container.appendChild(table);
         applyAdaptiveSheetLayout(container, sheet);
+        applyFrameWidth(container.closest('.frame'), frames[index]);
       }
 
       function addRow(index) {
@@ -3152,6 +3278,8 @@
         for (var i = 0; i < sheet.rows; i++) {
           sheet.data[i].push('');
         }
+        if (!Array.isArray(sheet.columnWidths)) sheet.columnWidths = [];
+        sheet.columnWidths.push(140);
         sheet.cols++;
         evaluateSheet(sheet);
         var div = document.querySelector('.frame[data-index="' + index + '"] .spreadsheet');
@@ -3165,6 +3293,9 @@
         if (sheet.cols > 1) {
           for (var i = 0; i < sheet.rows; i++) {
             sheet.data[i].pop();
+          }
+          if (Array.isArray(sheet.columnWidths) && sheet.columnWidths.length) {
+            sheet.columnWidths.pop();
           }
           sheet.cols--;
           evaluateSheet(sheet);
