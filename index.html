@@ -169,7 +169,6 @@
       }
 
       .weather-current {
-        display: inline-flex;
         align-items: center;
         gap: 8px;
         font-weight: 600;
@@ -251,7 +250,6 @@
 
       .upload-container {
         position: relative;
-        display: inline-flex;
       }
 
       .upload-panel {
@@ -367,7 +365,7 @@
 
       .frame-grid {
         min-width: 0;
-        columns: 2 320px;
+        columns: 280px;
         column-gap: 16px;
       }
 
@@ -408,9 +406,9 @@
 
       .sidebar-card.driver-carousel {
         flex: 1 1 auto;
-        min-height: clamp(480px, 60vh, 880px);
-        padding: clamp(28px, 3vw, 46px);
-        gap: clamp(18px, 2.6vw, 32px);
+        min-height: clamp(360px, 46vh, 620px);
+        padding: clamp(18px, 2vw, 28px);
+        gap: clamp(12px, 1.8vw, 20px);
         background: radial-gradient(
             circle at top left,
             rgba(var(--brand-primary-rgb), 0.18) 0%,
@@ -588,7 +586,7 @@
 
       .spotlight-body {
         display: grid;
-        gap: clamp(18px, 2.4vw, 28px);
+        gap: clamp(10px, 1.6vw, 16px);
         align-items: start;
       }
 
@@ -629,11 +627,11 @@
       .carousel-window {
         position: relative;
         flex: 1 1 auto;
-        min-height: clamp(240px, 35vh, 420px);
+        min-height: clamp(180px, 24vh, 280px);
         border-radius: clamp(20px, 2.2vw, 30px);
         background: linear-gradient(162deg, rgba(255, 255, 255, 0.94), rgba(var(--brand-secondary-rgb), 0.3));
         border: 1px solid rgba(var(--brand-primary-rgb), 0.18);
-        padding: clamp(12px, 1.5vw, 20px);
+        padding: clamp(8px, 1vw, 12px);
         overflow: hidden;
         box-shadow: 0 24px 52px -38px rgba(15, 23, 42, 0.6);
       }
@@ -676,7 +674,7 @@
         }
 
         .sidebar-card.driver-carousel {
-          min-height: clamp(560px, 68vh, 960px);
+          min-height: clamp(420px, 54vh, 700px);
         }
 
         .carousel-item {
