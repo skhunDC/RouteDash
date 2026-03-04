@@ -371,8 +371,10 @@
         min-width: 0;
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-auto-rows: min-content;
         gap: 16px;
         align-content: start;
+        align-items: start;
       }
 
       .sidebar {
@@ -760,6 +762,7 @@
 
       .frame {
         position: relative;
+        align-self: start;
         border-radius: 22px;
         border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(var(--brand-secondary-rgb), 0.12));
@@ -767,6 +770,7 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        height: auto;
         cursor: default;
         transition: transform 0.35s ease, box-shadow 0.35s ease;
       }
@@ -859,22 +863,26 @@
         flex: 1 1 auto;
         background: var(--surface);
         padding: 12px 16px;
-        overflow: auto;
+        overflow: visible;
       }
 
       .spreadsheet table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.85rem;
+        table-layout: fixed;
+        font-size: var(--sheet-font-size, 0.85rem);
       }
 
       .spreadsheet th,
       .spreadsheet td {
         border: 1px solid rgba(31, 41, 55, 0.12);
-        padding: 6px 8px;
+        padding: var(--sheet-cell-padding, 6px 8px);
         text-align: center;
         vertical-align: middle;
         background: rgba(248, 250, 252, 0.8);
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
       }
 
       .spreadsheet th {
@@ -889,7 +897,7 @@
         padding: 10px 12px 12px;
         border-top: 1px solid rgba(var(--brand-primary-rgb), 0.14);
         color: var(--text-primary);
-        overflow: auto;
+        overflow: visible;
       }
 
       .dashboard.dashboard-disabled {
@@ -1674,31 +1682,45 @@
         var sheetEl = frameElement.querySelector('.spreadsheet');
         var dashEl = frameElement.querySelector('.dashboard');
         if (!sheetEl || !dashEl) return;
-        var dashboard = frame.dashboard || {};
-        var size = dashboard.sheetSize || 'balanced';
-        var sizes = {
-          compact: { sheet: '0.8 1 35%', dashboard: '1 1 55%' },
-          balanced: { sheet: '1 1 50%', dashboard: '1 1 45%' },
-          expanded: { sheet: '1.4 1 65%', dashboard: '1 1 35%' }
-        };
-        var selected = sizes[size] || sizes.balanced;
         if (dashEl.classList.contains('dashboard-disabled')) {
           dashEl.style.display = 'none';
           sheetEl.style.display = '';
-          sheetEl.style.flex = '1 1 100%';
-          dashEl.style.flex = '0 0 auto';
           return;
         }
+
+        var dashboard = frame.dashboard || {};
         dashEl.style.display = '';
         if (dashboard.visible === false) {
           sheetEl.style.display = '';
-          sheetEl.style.flex = '1 1 100%';
-          dashEl.style.flex = '0 0 auto';
+          dashEl.style.display = 'none';
           return;
         }
-        sheetEl.style.display = '';
-        sheetEl.style.flex = selected.sheet;
-        dashEl.style.flex = selected.dashboard;
+
+        // Dashboard-enabled frames are chart-first: hide the editable sheet from the card view
+        // while keeping sheet data persisted in the backend.
+        sheetEl.style.display = 'none';
+      }
+
+      function applyAdaptiveSheetLayout(container, sheet) {
+        if (!container || !sheet) return;
+        var cols = typeof sheet.cols === 'number' ? sheet.cols : 0;
+        var rows = typeof sheet.rows === 'number' ? sheet.rows : 0;
+        var frameEl = container.closest('.frame');
+        if (!frameEl) return;
+
+        var fontSize = '0.85rem';
+        var cellPadding = '6px 8px';
+
+        if (cols >= 8 || rows >= 18) {
+          fontSize = '0.72rem';
+          cellPadding = '4px 5px';
+        } else if (cols >= 6 || rows >= 12) {
+          fontSize = '0.78rem';
+          cellPadding = '5px 6px';
+        }
+
+        frameEl.style.setProperty('--sheet-font-size', fontSize);
+        frameEl.style.setProperty('--sheet-cell-padding', cellPadding);
       }
 
       function formatDateLabel(dateStr) {
@@ -2914,6 +2936,7 @@
         }
         table.appendChild(tbody);
         container.appendChild(table);
+        applyAdaptiveSheetLayout(container, sheet);
       }
 
       function addRow(index) {
