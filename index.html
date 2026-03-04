@@ -288,7 +288,7 @@
         grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 560px);
         gap: clamp(20px, 2.8vw, 40px);
         flex: 1 1 auto;
-        align-items: stretch;
+        align-items: start;
         min-height: 0;
       }
 
@@ -373,7 +373,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 14px;
-        margin-top: 14px;
+        margin-top: 8px;
       }
 
       .sidebar-frame-grid .frame {
@@ -384,9 +384,9 @@
       .sidebar {
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 14px;
         min-height: 0;
-        align-self: stretch;
+        align-self: start;
       }
 
       .sidebar-card {
@@ -405,9 +405,9 @@
       }
 
       .sidebar-card.driver-carousel {
-        flex: 1 1 auto;
-        min-height: clamp(360px, 46vh, 620px);
-        padding: clamp(18px, 2vw, 28px);
+        flex: 0 0 auto;
+        min-height: clamp(300px, 36vh, 440px);
+        padding: clamp(14px, 1.4vw, 22px);
         gap: clamp(12px, 1.8vw, 20px);
         background: radial-gradient(
             circle at top left,
@@ -531,7 +531,14 @@
 
       .spotlight-header {
         display: grid;
-        gap: clamp(12px, 1.8vw, 20px);
+        gap: clamp(8px, 1.1vw, 12px);
+      }
+
+      .spotlight-title-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
       }
 
       .spotlight-eyebrow {
@@ -563,15 +570,9 @@
         font-size: 0.9rem;
       }
 
-      .spotlight-heading {
-        display: grid;
-        gap: 8px;
-        max-width: 42ch;
-      }
-
       #driver-spotlight-title {
         margin: 0;
-        font-size: clamp(1.6rem, 2.8vw, 2.6rem);
+        font-size: clamp(1.1rem, 1.7vw, 1.45rem);
         font-weight: 700;
         letter-spacing: -0.01em;
         color: var(--brand-dark);
@@ -579,7 +580,7 @@
 
       .spotlight-intro {
         margin: 0;
-        font-size: clamp(1rem, 1.3vw, 1.18rem);
+        font-size: clamp(0.95rem, 1.12vw, 1.05rem);
         color: rgba(var(--brand-primary-rgb), 0.78);
         line-height: 1.5;
       }
@@ -620,7 +621,7 @@
       @media (min-width: 1100px) {
         .spotlight-body {
           grid-template-columns: clamp(240px, 26vw, 320px) minmax(0, 1fr);
-          align-items: stretch;
+          align-items: start;
         }
       }
 
@@ -3313,14 +3314,14 @@
         <aside class="sidebar">
           <div id="driver-carousel" class="sidebar-card driver-carousel">
             <header class="spotlight-header">
-              <div class="spotlight-eyebrow">
-                <span class="spotlight-icon" aria-hidden="true">⭐</span>
-                <span class="spotlight-label">Team Highlights</span>
-              </div>
-              <div class="spotlight-heading">
+              <div class="spotlight-title-row">
+                <div class="spotlight-eyebrow">
+                  <span class="spotlight-icon" aria-hidden="true">⭐</span>
+                  <span class="spotlight-label">Team Highlights</span>
+                </div>
                 <h2 id="driver-spotlight-title">Driver Spotlight</h2>
-                <p class="spotlight-intro">New Customer Signups</p>
               </div>
+              <p class="spotlight-intro">New Customer Signups</p>
             </header>
             <div class="spotlight-body">
               <div class="spotlight-side-cards">
