@@ -1,67 +1,32 @@
 # RouteDash
 
-RouteDash is a Google Apps Script dashboard optimized for kiosk displays and wide monitors. The app now uses a responsive tile grid, a Sheets-backed data model, and batched edit writes via `google.script.run`.
+## Overview
+RouteDash is a Google Apps Script powered operations dashboard designed for delivery and logistics teams. The app delivers a polished, kiosk-friendly experience with live weather, dynamic data visualizations, team recognition panels, and rich customization options that can be managed directly from the published web app.
 
-## What's new in this refactor
-- Replaced draggable/free-floating windows with a structured CSS Grid dashboard.
-- Added **Display mode** (clean TV output) and **Edit mode** (tile/data management).
-- Moved persistence to a dedicated Google Spreadsheet (META + IMAGES + data tabs).
-- Added workbook-style tab support and server-side formula handling using Google Sheets formulas.
-- Added a calm single-image viewer (fade transition, reduced-motion aware, lazy-load + prefetch).
-- Added a migration function to move legacy Script Properties dashboard data to Sheets.
+## Key features
+- **Customizable hero header** – Displays the team logo, editable title, and live date/time alongside current conditions pulled from Open-Meteo. Weather codes are translated into readable text so the display is easy to understand at a glance.
+- **Movable data frames** – Operators can create, drag, resize, and rename frames. Each frame contains a lightweight spreadsheet editor backed by Apps Script properties and automatically generates a Chart.js visualization (line, bar, or pie) from the entered numbers.
+- **Dashboard visibility controls** – Frames remember whether their dashboard is hidden, the preferred chart type, and sheet density. Built-in controls adjust the number of rows/columns and the rendered layout without reloading the page.
+- **Driver engagement tools** – A "Driver of the Week" callout, driver spotlight image gallery, and uploader keep the team section fresh. Images are stored in Google Drive and reloaded on subsequent visits.
+- **Daily inspiration** – The app requests a quote from ZenQuotes, caches it for 24 hours via script properties, and falls back to curated quotes when the API is unavailable.
+- **Smooth loading experience** – A progress overlay communicates background work while dashboards initialize, reflecting recent performance-focused commits.
 
-## Apps Script setup
-1. Open/create an Apps Script project.
-2. Copy `Code.gs` and `index.html` into that project.
-3. Deploy as a Web App (execute as the deployment owner; grant kiosk access as needed).
-4. Open the web app URL. On first run, `getOrCreateDataSpreadsheet()` creates and stores a spreadsheet ID in Script Properties (`dataSpreadsheetId`).
+## Project layout
+- `Code.gs` – Google Apps Script backend that serves the UI, fetches weather/quote data, manages Script Properties, and stores driver imagery in Drive.
+- `index.html` – Standalone HTML, CSS, and JavaScript for the front-end. It loads Chart.js from a CDN, renders the interface, synchronizes frame data with Apps Script, and contains the spreadsheet + chart logic.
+- `weather.js` – Node-friendly copy of `weatherCodeToText` used in automated tests.
+- `tests/weather.test.js` – Jest suite validating the weather code mapping.
 
-## Data spreadsheet model
-The spreadsheet created by RouteDash is the primary datastore:
+## Working with the Apps Script project
+1. Create or open a Google Apps Script project and replace the default files with the contents of `Code.gs` and `index.html`.
+2. Deploy the project as a Web App (Execute as "Me" and allow access to "Anyone with the link" for kiosk displays).
+3. The app stores settings (frames, header title, quote cache, etc.) in Script Properties. Images uploaded through the interface are saved to Google Drive; ensure the deployment account has permission to create and manage files.
+4. To reset frames or spotlight images, clear the corresponding Script Properties or use the provided UI controls.
 
-- `META` tab
-  - Key/value JSON records for dashboard config + layout.
-  - `appConfig` includes values like `headerTitle`, `driverOfWeek`, and image rotation timing.
-  - `dashboardLayout` includes tile order, type, sheet source, and size preset (`small`, `wide`, `tall`, `big`).
-- `IMAGES` tab
-  - Metadata index for uploaded Drive images (`imageId`, `fileId`, name, mime type, timestamps).
-- Data tabs (e.g. `Sheet1`, `Sales`, `Stops`)
-  - Your workbook-like tile datasets.
-  - Formulas are authored and evaluated by Google Sheets, including cross-tab references like `=Sheet2!A1`.
+## Local development & testing
+- Run `npm install` once to install Jest.
+- Execute `npm test` to validate the weather mapping helper before shipping Apps Script changes.
+- The front-end code lives entirely in `index.html`; consider using a dedicated editor for large HTML/JS files and copy the result back into Apps Script.
 
-## Server API highlights
-Primary server functions in `Code.gs`:
-- `getOrCreateDataSpreadsheet()`
-- `getAppState()`
-- `getSheetRange(sheetName, a1Range, options)`
-- `applySheetEdits(edits)` (batch write)
-- `createSheetTab(name)`, `renameSheetTab(oldName, newName)`, `deleteSheetTab(name)`
-- `getImagesIndex()`, `addImages(base64List)`, `deleteImage(imageId)`, `getImageById(imageId)`
-- `migrateLegacyData()`
-
-## Running migration from legacy Script Properties
-If you have older frame/layout/image data in Script Properties:
-
-1. Open Apps Script editor.
-2. Run `migrateLegacyData()` once.
-3. Confirm return payload contains `migrated: true`.
-4. Reload the web app.
-
-Migration behavior:
-- Converts legacy `frames` to grid tile records in `META.dashboardLayout`.
-- Pulls legacy `headerTitle` and `driverOfWeek` into `META.appConfig`.
-- Converts legacy `driverImageIds` to `IMAGES` index rows (without duplicating files).
-
-## Image management workflow
-- In Edit mode, upload files from the Images panel.
-- Upload calls `addImages(base64List)` and stores metadata in the `IMAGES` sheet while binaries remain in Drive.
-- Image tiles show one image at a time with a gentle fade.
-- Current + next images are fetched/lazy-prefetched using `getImageById(imageId)`.
-
-## Local testing
-```bash
-npm install
-npm test
-```
-
-Existing Jest coverage validates weather code mapping parity in `weather.js`.
+## Contributing
+Focus on maintainable, accessible UI changes and keep Script Properties migrations backward compatible. When adding server utilities, mirror the logic in the Node helpers if you need automated coverage. Update this README when the dashboard surface or workflows change so downstream deployments remain in sync.
