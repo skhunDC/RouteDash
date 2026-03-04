@@ -991,6 +991,85 @@
         font-style: italic;
       }
 
+      .dashboard-data-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .dashboard-data-card {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+        border-radius: 10px;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .dashboard-data-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+
+      .dashboard-data-value {
+        font-size: 0.95rem;
+        color: var(--brand-dark);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dashboard-data-caption {
+        margin: 0 0 8px;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .weekly-sales-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .weekly-sales-card {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+        border-radius: 10px;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .weekly-sales-card-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+
+      .weekly-sales-card-value {
+        font-size: 0.95rem;
+        color: var(--brand-dark);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .weekly-sales-delta-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
+      .weekly-sales-delta-badge[data-sign='positive'] { color: #047857; }
+      .weekly-sales-delta-badge[data-sign='negative'] { color: #b91c1c; }
+      .weekly-sales-delta-badge[data-sign='zero'] { color: var(--text-secondary); }
+
       .dashboard-disabled-message {
         font-size: 0.85rem;
         color: var(--text-secondary);
@@ -2421,6 +2500,55 @@
         return step;
       }
 
+
+      function buildDashboardDataStrip(entries, labels) {
+        if (!entries.length || !labels.length) return null;
+        var latest = null;
+        for (var i = entries.length - 1; i >= 0; i--) {
+          var candidate = entries[i];
+          if (!candidate || !candidate.values) continue;
+          var hasValue = candidate.values.some(function(value) {
+            return typeof value === 'number' && isFinite(value);
+          });
+          if (hasValue) {
+            latest = candidate;
+            break;
+          }
+        }
+        if (!latest) return null;
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'dashboard-data-strip';
+        for (var j = 0; j < labels.length; j++) {
+          var current = latest.values[j];
+          if (typeof current !== 'number' || !isFinite(current)) continue;
+          var card = document.createElement('div');
+          card.className = 'dashboard-data-card';
+
+          var label = document.createElement('span');
+          label.className = 'dashboard-data-label';
+          label.textContent = labels[j] || 'Series ' + (j + 1);
+
+          var value = document.createElement('strong');
+          value.className = 'dashboard-data-value';
+          value.textContent = current.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+          card.appendChild(label);
+          card.appendChild(value);
+          wrapper.appendChild(card);
+        }
+
+        if (!wrapper.childElementCount) return null;
+
+        var fragment = document.createDocumentFragment();
+        var caption = document.createElement('p');
+        caption.className = 'dashboard-data-caption';
+        caption.textContent = 'Latest data: ' + getEntrySummary(latest, entries.length - 1);
+        fragment.appendChild(caption);
+        fragment.appendChild(wrapper);
+        return fragment;
+      }
+
       function buildWeeklySalesSummary(entries, labels) {
         if (!entries.length || labels.length < 2) return null;
         var summary = document.createElement('div');
@@ -2531,7 +2659,24 @@
         if (boundsChanged && framesLoaded) saveFrames();
 
         var entries = extractDashboardData(frame);
+        var valueColumns = getDashboardValueColumns(frame);
+        if (!valueColumns.length) {
+          valueColumns = [dashboard.valueColumn];
+        }
+        var seriesLabels = getDashboardSeriesLabels(frame, valueColumns);
         var weeklyFrame = isWeeklySalesFrame(frame);
+
+        if (entries.length) {
+          var summaryBlock = weeklyFrame
+            ? buildWeeklySalesSummary(entries, seriesLabels)
+            : buildDashboardDataStrip(entries, seriesLabels);
+          if (!summaryBlock) {
+            summaryBlock = buildDashboardDataStrip(entries, seriesLabels);
+          }
+          if (summaryBlock) {
+            container.appendChild(summaryBlock);
+          }
+        }
 
         var chartContainer = document.createElement('div');
         chartContainer.className = 'dashboard-chart';
