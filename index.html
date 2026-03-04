@@ -886,7 +886,7 @@
       .dashboard {
         flex: 1 1 auto;
         background: rgba(241, 245, 249, 0.9);
-        padding: 14px 18px 18px;
+        padding: 10px 12px 12px;
         border-top: 1px solid rgba(var(--brand-primary-rgb), 0.14);
         color: var(--text-primary);
         overflow: auto;
@@ -1082,8 +1082,8 @@
 
       .dashboard-chart {
         position: relative;
-        height: 210px;
-        margin-top: 14px;
+        height: 220px;
+        margin-top: 6px;
       }
 
       .dashboard-chart.weekly-sales-chart {
@@ -1430,23 +1430,12 @@
       var frameIdCounter = 0;
       var carouselTimer = null;
       var carouselIndex = 0;
-      var DASHBOARD_EXEMPT_TITLES = ["Who's Off, When?", 'Ride-Along Schedule'];
+      var DASHBOARD_ENABLED_TITLES = ['weekly sales', 'ytd vs last year sales'];
 
-      function shouldSkipDashboard(frame) {
+      function isDashboardEnabledFrame(frame) {
         if (!frame || !frame.title) return false;
-        var normalized = frame.title
-          .toLowerCase()
-          .replace(/\s+/g, ' ')
-          .trim();
-        return DASHBOARD_EXEMPT_TITLES.some(function(candidate) {
-          return (
-            normalized ===
-            candidate
-              .toLowerCase()
-              .replace(/\s+/g, ' ')
-              .trim()
-          );
-        });
+        var normalized = normalizeFrameTitle(frame.title);
+        return DASHBOARD_ENABLED_TITLES.indexOf(normalized) !== -1;
       }
 
       function generateFrameId() {
@@ -1477,14 +1466,11 @@
       }
 
       function isYtdSalesFrame(frame) {
-        if (!frame || !frame.title) return false;
-        return normalizeFrameTitle(frame.title) === 'ytd vs last year sales';
+        return isDashboardEnabledFrame(frame) && normalizeFrameTitle(frame.title) === 'ytd vs last year sales';
       }
 
       function isWeeklySalesFrame(frame) {
-        if (!frame || !frame.title) return false;
-        var normalized = normalizeFrameTitle(frame.title);
-        return normalized === 'weekly sales' || normalized === 'weekly sales dashboard';
+        return isDashboardEnabledFrame(frame) && normalizeFrameTitle(frame.title) === 'weekly sales';
       }
 
       function arraysEqual(a, b) {
@@ -1673,6 +1659,10 @@
           delete frame.dashboard.data;
           updated = true;
         }
+        if (!isDashboardEnabledFrame(frame) && frame.dashboard.visible !== false) {
+          frame.dashboard.visible = false;
+          updated = true;
+        }
         if (applyFrameSpecificOverrides(frame)) {
           updated = true;
         }
@@ -1693,11 +1683,13 @@
         };
         var selected = sizes[size] || sizes.balanced;
         if (dashEl.classList.contains('dashboard-disabled')) {
+          dashEl.style.display = 'none';
           sheetEl.style.display = '';
           sheetEl.style.flex = '1 1 100%';
           dashEl.style.flex = '0 0 auto';
           return;
         }
+        dashEl.style.display = '';
         if (dashboard.visible === false) {
           sheetEl.style.display = '';
           sheetEl.style.flex = '1 1 100%';
@@ -2473,125 +2465,51 @@
         container.innerHTML = '';
         container.classList.remove('dashboard-hidden');
         container.classList.remove('dashboard-disabled');
-        var skipDashboard = shouldSkipDashboard(frame);
+        var dashboardEnabled = isDashboardEnabledFrame(frame);
+
+        if (!dashboardEnabled) {
+          dashboard.visible = false;
+          container.classList.add('dashboard-disabled');
+          destroyDashboard(frame.id);
+          applyFrameLayout(container.closest('.frame'), frame);
+          return;
+        }
+        dashboard.visible = true;
 
         var header = document.createElement('div');
         header.className = 'dashboard-header';
         var headerLeft = document.createElement('div');
         headerLeft.className = 'dashboard-header-left';
         var title = document.createElement('span');
-        title.textContent = skipDashboard ? frame.title || 'Dashboard' : 'Dashboard';
+        title.textContent = 'Dashboard';
         headerLeft.appendChild(title);
-
-        if (!skipDashboard) {
-          var toggleBtn = document.createElement('button');
-          toggleBtn.type = 'button';
-          toggleBtn.textContent = dashboard.visible === false ? 'Show Dashboard' : 'Hide Dashboard';
-          toggleBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dashboard.visible = !dashboard.visible;
-            if (dashboard.visible === false) {
-              destroyDashboard(frame.id);
-            }
-            applyFrameLayout(container.closest('.frame'), frame);
-            if (framesLoaded) saveFrames();
-            renderDashboard(container, index);
-          });
-          headerLeft.appendChild(toggleBtn);
-        }
         header.appendChild(headerLeft);
 
-        if (skipDashboard) {
-          container.classList.add('dashboard-disabled');
-        } else {
-          container.classList.toggle('dashboard-hidden', dashboard.visible === false);
-        }
-
-        if (!skipDashboard && dashboard.visible !== false) {
-          var typeLabel = document.createElement('label');
-          typeLabel.textContent = 'Chart';
-          var select = document.createElement('select');
-          select.innerHTML = '';
-          ['line', 'bar', 'pie'].forEach(function(option) {
-            var opt = document.createElement('option');
-            opt.value = option;
-            opt.textContent = option.charAt(0).toUpperCase() + option.slice(1);
-            select.appendChild(opt);
-          });
-          select.value = dashboard.chartType || 'line';
-          select.addEventListener('change', function() {
-            dashboard.chartType = select.value;
-            saveFrames();
-            renderDashboard(container, index);
-          });
-          typeLabel.appendChild(select);
-          header.appendChild(typeLabel);
-        }
+        var typeLabel = document.createElement('label');
+        typeLabel.textContent = 'Chart';
+        var select = document.createElement('select');
+        select.innerHTML = '';
+        ['line', 'bar', 'pie'].forEach(function(option) {
+          var opt = document.createElement('option');
+          opt.value = option;
+          opt.textContent = option.charAt(0).toUpperCase() + option.slice(1);
+          select.appendChild(opt);
+        });
+        select.value = dashboard.chartType || 'line';
+        select.addEventListener('change', function() {
+          dashboard.chartType = select.value;
+          saveFrames();
+          renderDashboard(container, index);
+        });
+        typeLabel.appendChild(select);
+        header.appendChild(typeLabel);
         container.appendChild(header);
 
-        if (skipDashboard) {
-          destroyDashboard(frame.id);
-          var info = document.createElement('div');
-          info.className = 'dashboard-disabled-message';
-          info.setAttribute('role', 'note');
-          info.textContent = 'This frame shares schedule details without a dashboard visualization.';
-          container.appendChild(info);
-          applyFrameLayout(container.closest('.frame'), frame);
-          return;
-        }
-
-        if (dashboard.visible === false) {
-          var hiddenMessage = document.createElement('div');
-          hiddenMessage.className = 'dashboard-hidden-message';
-          hiddenMessage.textContent = 'Dashboard hidden. Use "Show Dashboard" to display charts for this frame.';
-          container.appendChild(hiddenMessage);
-          applyFrameLayout(container.closest('.frame'), frame);
-          return;
-        }
-
-        var sheet = frame.sheet;
         var boundsChanged = ensureDashboardColumnBounds(frame);
         if (boundsChanged && framesLoaded) saveFrames();
 
-        var form = document.createElement('div');
-        form.className = 'dashboard-form';
-
-        var sizeField = document.createElement('label');
-        sizeField.textContent = 'Sheet size';
-        var sizeSelect = document.createElement('select');
-        [
-          { value: 'compact', label: 'Compact' },
-          { value: 'balanced', label: 'Balanced' },
-          { value: 'expanded', label: 'Expanded' }
-        ].forEach(function(option) {
-          var opt = document.createElement('option');
-          opt.value = option.value;
-          opt.textContent = option.label;
-          sizeSelect.appendChild(opt);
-        });
-        sizeSelect.value = dashboard.sheetSize || 'balanced';
-        sizeSelect.addEventListener('change', function() {
-          dashboard.sheetSize = sizeSelect.value;
-          dashboard.sheetSizeManual = true;
-          applyFrameLayout(container.closest('.frame'), frame);
-          if (framesLoaded) saveFrames();
-        });
-        sizeField.appendChild(sizeSelect);
-
-        form.appendChild(sizeField);
-        container.appendChild(form);
-
         var entries = extractDashboardData(frame);
-        var valueColumns = getDashboardValueColumns(frame);
-        if (!valueColumns.length) {
-          valueColumns = [dashboard.valueColumn];
-        }
-        var multiSeries = valueColumns.length > 1;
         var weeklyFrame = isWeeklySalesFrame(frame);
-        var seriesLabels = getDashboardSeriesLabels(frame, valueColumns);
-        var numberFormatOptions = weeklyFrame
-          ? { maximumFractionDigits: 0 }
-          : { maximumFractionDigits: 2 };
 
         var chartContainer = document.createElement('div');
         chartContainer.className = 'dashboard-chart';
@@ -2604,111 +2522,14 @@
         if (entries.length === 0) {
           canvas.style.display = 'none';
           destroyDashboard(frame.id);
+          var empty = document.createElement('div');
+          empty.className = 'dashboard-empty';
+          empty.textContent = 'Add valid labels and values in this frame to render the chart.';
+          container.appendChild(empty);
         } else {
           canvas.style.display = 'block';
           updateDashboardChart(frame, entries, canvas);
         }
-
-        var dataWrapper = document.createElement('div');
-        dataWrapper.className = 'dashboard-list';
-        if (entries.length === 0) {
-          destroyDashboard(frame.id);
-          var empty = document.createElement('div');
-          empty.className = 'dashboard-empty';
-          empty.textContent = 'Enter labels and numbers in the selected sheet columns to populate this chart automatically.';
-
-          dataWrapper.appendChild(empty);
-        } else {
-          var table = document.createElement('table');
-          if (multiSeries) {
-            table.classList.add('comparison-table');
-            var thead = document.createElement('thead');
-            var headRow = document.createElement('tr');
-            var labelHeader = document.createElement('th');
-            var labelHeaderText = getColumnHeader(sheet, dashboard.labelColumn);
-            labelHeader.textContent = labelHeaderText || 'Label';
-            headRow.appendChild(labelHeader);
-            seriesLabels.forEach(function(label) {
-              var th = document.createElement('th');
-              th.textContent = label || 'Series';
-              th.className = 'comparison-heading';
-              headRow.appendChild(th);
-            });
-            if (valueColumns.length === 2) {
-              var deltaHeader = document.createElement('th');
-              deltaHeader.textContent = 'Δ';
-              deltaHeader.className = 'comparison-heading comparison-heading-delta';
-              deltaHeader.setAttribute('title', 'Difference between columns');
-              headRow.appendChild(deltaHeader);
-            }
-            thead.appendChild(headRow);
-            table.appendChild(thead);
-          }
-          var tbody = document.createElement('tbody');
-          entries.forEach(function(entry, idx) {
-            var row = document.createElement('tr');
-            var labelCell = document.createElement('td');
-            labelCell.textContent = getEntrySummary(entry, idx);
-            labelCell.className = 'comparison-label';
-            row.appendChild(labelCell);
-            if (multiSeries) {
-              seriesLabels.forEach(function(label, seriesIdx) {
-                var valueCell = document.createElement('td');
-                valueCell.className = 'value comparison-value';
-                var seriesValue = entry.values && entry.values.length > seriesIdx ? entry.values[seriesIdx] : null;
-                if (typeof seriesValue === 'number' && isFinite(seriesValue)) {
-                  var seriesSign = seriesValue < 0 ? 'negative' : seriesValue > 0 ? 'positive' : 'zero';
-                  valueCell.dataset.sign = seriesSign;
-                  valueCell.textContent = seriesValue.toLocaleString(undefined, numberFormatOptions);
-                } else {
-                  valueCell.dataset.sign = 'zero';
-                  valueCell.textContent = '—';
-                  valueCell.classList.add('value-empty');
-                }
-                row.appendChild(valueCell);
-              });
-              if (valueColumns.length === 2) {
-                var primary = entry.values && typeof entry.values[0] === 'number' ? entry.values[0] : null;
-                var comparison = entry.values && typeof entry.values[1] === 'number' ? entry.values[1] : null;
-                var deltaCell = document.createElement('td');
-                deltaCell.className = 'value comparison-delta';
-                if (typeof primary === 'number' && typeof comparison === 'number') {
-                  var delta = comparison - primary;
-                  var deltaSign = delta < 0 ? 'negative' : delta > 0 ? 'positive' : 'zero';
-                  deltaCell.dataset.sign = deltaSign;
-                  var deltaArrow = deltaSign === 'positive' ? '↑' : deltaSign === 'negative' ? '↓' : '→';
-                  var formattedDelta = (delta >= 0 ? '+' : '') + delta.toLocaleString(undefined, numberFormatOptions);
-                  var percentDelta = primary !== 0 ? (delta / primary) * 100 : null;
-                  var percentText = percentDelta == null || !isFinite(percentDelta)
-                    ? ''
-                    : ' (' + (percentDelta >= 0 ? '+' : '') + percentDelta.toFixed(1) + '%)';
-                  deltaCell.textContent = formattedDelta + ' ' + deltaArrow + percentText;
-                  var deltaLabel = 'Change of ' + formattedDelta + ' ' + deltaArrow;
-                  if (percentText) {
-                    deltaLabel += ' ' + percentText.trim();
-                  }
-                  deltaCell.setAttribute('aria-label', deltaLabel);
-                } else {
-                  deltaCell.dataset.sign = 'zero';
-                  deltaCell.textContent = '—';
-                  deltaCell.classList.add('value-empty');
-                }
-                row.appendChild(deltaCell);
-              }
-            } else {
-              var valueCell = document.createElement('td');
-              valueCell.className = 'value';
-              var sign = entry.value < 0 ? 'negative' : entry.value > 0 ? 'positive' : 'zero';
-              valueCell.dataset.sign = sign;
-              valueCell.textContent = entry.value.toLocaleString(undefined, numberFormatOptions);
-              row.appendChild(valueCell);
-            }
-            tbody.appendChild(row);
-          });
-          table.appendChild(tbody);
-          dataWrapper.appendChild(table);
-        }
-        container.appendChild(dataWrapper);
 
         applyFrameLayout(container.closest('.frame'), frame);
       }
