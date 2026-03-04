@@ -351,9 +351,6 @@
         background: linear-gradient(135deg, rgba(var(--brand-secondary-rgb), 0.12), rgba(var(--brand-secondary-rgb), 0)) var(--surface-muted);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -30px 60px rgba(15, 23, 42, 0.08);
         padding: 20px;
-        display: grid;
-        grid-template-columns: minmax(260px, 0.85fr) minmax(0, 2.15fr);
-        gap: 18px;
         overflow: auto;
       }
 
@@ -368,12 +365,6 @@
 
       .floating-card .sidebar-card:hover {
         transform: none;
-      }
-
-      .viewing-card-stack {
-        display: grid;
-        gap: 16px;
-        align-content: start;
       }
 
       .frame-grid {
@@ -593,74 +584,38 @@
         align-items: start;
       }
 
+      .spotlight-side-cards {
+        display: grid;
+        gap: 14px;
+      }
+
+      .spotlight-side-cards .sidebar-card {
+        padding: 18px;
+        border-radius: 18px;
+      }
+
+      .spotlight-side-cards .card-header h2 {
+        font-size: 1rem;
+      }
+
+      .spotlight-side-cards .driver-week {
+        gap: 12px;
+      }
+
+      .spotlight-side-cards .driver-week input {
+        font-size: 1.08rem;
+        padding: 10px 12px;
+      }
+
+      .spotlight-side-cards #weekly-quote {
+        font-size: 0.93rem;
+      }
+
       @media (min-width: 1100px) {
         .spotlight-body {
           grid-template-columns: clamp(240px, 26vw, 320px) minmax(0, 1fr);
           align-items: stretch;
         }
-
-        .spotlight-meta {
-          width: 100%;
-          align-self: stretch;
-        }
-      }
-
-      .spotlight-meta {
-        display: flex;
-        flex-direction: column;
-        gap: clamp(10px, 1.6vw, 16px);
-        padding: clamp(18px, 2vw, 26px);
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.82);
-        border: 1px solid rgba(var(--brand-primary-rgb), 0.18);
-        box-shadow: 0 36px 70px -38px rgba(var(--brand-primary-rgb), 0.48);
-        color: var(--text-secondary);
-        backdrop-filter: blur(10px);
-        width: min(100%, clamp(320px, 32vw, 360px));
-      }
-
-      .spotlight-meta.is-empty {
-        background: rgba(241, 248, 255, 0.94);
-        border-color: rgba(var(--brand-secondary-rgb), 0.26);
-      }
-
-      .spotlight-count {
-        margin: 0;
-        font-size: clamp(1.2rem, 1.9vw, 1.65rem);
-        font-weight: 700;
-        color: var(--brand-dark);
-      }
-
-      .spotlight-status {
-        margin: 0;
-        font-size: clamp(0.95rem, 1.2vw, 1.08rem);
-        line-height: 1.55;
-      }
-
-      .spotlight-meta.is-empty .spotlight-count {
-        color: rgba(var(--brand-primary-rgb), 0.75);
-      }
-
-      .spotlight-hint {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-size: clamp(0.85rem, 1.05vw, 0.95rem);
-        color: rgba(var(--brand-primary-rgb), 0.8);
-        padding-top: 8px;
-        border-top: 1px dashed rgba(var(--brand-primary-rgb), 0.2);
-      }
-
-      .hint-icon {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(var(--brand-primary-rgb), 0.12);
-        color: var(--brand-primary);
-        font-weight: 600;
       }
 
       .carousel-window {
@@ -1266,9 +1221,6 @@
           grid-template-columns: 1fr;
         }
 
-        .spotlight-meta {
-          width: 100%;
-        }
       }
 
       @media (max-width: 768px) {
@@ -1329,16 +1281,8 @@
           gap: 20px;
         }
 
-        .spotlight-meta {
-          align-items: center;
-          text-align: center;
-          gap: 12px;
-        }
-
-        .spotlight-hint {
-          justify-content: center;
-          text-align: center;
-          gap: 8px;
+        .spotlight-side-cards {
+          grid-template-columns: 1fr;
         }
 
         .spotlight-footer-inner {
@@ -3269,20 +3213,13 @@
       }
 
       function updateSpotlightMeta() {
-        var meta = document.getElementById('carousel-meta');
-        var countEl = document.getElementById('carousel-count');
-        var statusEl = document.getElementById('carousel-status');
-        if (!countEl) return;
+        var intro = document.querySelector('.spotlight-intro');
+        if (!intro) return;
         var count = driverImages.length;
-        if (meta) {
-          meta.classList.toggle('is-empty', count === 0);
-        }
         if (count === 0) {
-          countEl.textContent = 'No spotlight photos yet';
-          if (statusEl) statusEl.textContent = 'Upload driver images to start the spotlight.';
+          intro.textContent = 'Upload driver images to start the spotlight.';
         } else {
-          countEl.textContent = 'Spotlight photos: ' + count;
-          if (statusEl) statusEl.textContent = 'Showing one zoomed image at a time.';
+          intro.textContent = 'Showing one zoomed image at a time.';
         }
       }
 
@@ -3388,27 +3325,6 @@
             <h2>Today's Operations</h2>
           </div>
           <div id="viewing-area" class="viewing-area">
-            <div class="viewing-card-stack">
-              <div class="floating-card">
-                <div id="driver-week" class="floating-card-inner sidebar-card driver-week">
-                  <div class="card-header">
-                    <h2>Driver of the Week</h2>
-                    <span class="card-subtitle">Celebrate wins and keep the team inspired.</span>
-                  </div>
-                  <label for="driver-name">Driver name</label>
-                  <input type="text" id="driver-name" placeholder="Enter name">
-                </div>
-              </div>
-              <div class="floating-card">
-                <div class="floating-card-inner sidebar-card quote-card">
-                  <div class="card-header">
-                    <h2>Team Message</h2>
-                    <span class="card-subtitle">Quote of the Day/Week</span>
-                  </div>
-                  <p id="weekly-quote">Loading quote...</p>
-                </div>
-              </div>
-            </div>
             <div id="frame-grid" class="frame-grid"></div>
           </div>
         </section>
@@ -3425,26 +3341,27 @@
               </div>
             </header>
             <div class="spotlight-body">
-              <div
-                id="carousel-meta"
-                class="spotlight-meta is-empty"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                <p id="carousel-count" class="spotlight-count">No spotlight photos yet</p>
-                <p id="carousel-status" class="spotlight-status">
-                  Upload driver images to start the rotation.
-                </p>
-                <div class="spotlight-hint">
-                  <span class="hint-icon" aria-hidden="true">⬆</span>
-                  <span>Use the Upload button above to add new driver portraits.</span>
+              <div class="spotlight-side-cards">
+                <div id="driver-week" class="floating-card-inner sidebar-card driver-week">
+                  <div class="card-header">
+                    <h2>Driver of the Week</h2>
+                    <span class="card-subtitle">Celebrate wins and keep the team inspired.</span>
+                  </div>
+                  <label for="driver-name">Driver name</label>
+                  <input type="text" id="driver-name" placeholder="Enter name">
+                </div>
+                <div class="floating-card-inner sidebar-card quote-card">
+                  <div class="card-header">
+                    <h2>Team Message</h2>
+                    <span class="card-subtitle">Quote of the Day/Week</span>
+                  </div>
+                  <p id="weekly-quote">Loading quote...</p>
                 </div>
               </div>
               <div
                 class="carousel-window"
                 role="region"
                 aria-labelledby="driver-spotlight-title"
-                aria-describedby="carousel-status"
               >
                 <div id="carousel-track" class="carousel-track"></div>
               </div>
