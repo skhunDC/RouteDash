@@ -365,10 +365,8 @@
 
       .frame-grid {
         min-width: 0;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        gap: 16px;
+        columns: 320px;
+        column-gap: 16px;
       }
 
       .sidebar-frame-grid {
@@ -769,9 +767,10 @@
 
       .frame {
         position: relative;
-        display: inline-flex;
-        width: min(100%, var(--frame-width, 360px));
-        margin: 0;
+        display: block;
+        width: 100%;
+        margin: 0 0 16px;
+        break-inside: avoid;
         align-self: start;
         border-radius: 22px;
         border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
@@ -1314,12 +1313,7 @@
         }
 
         .frame-grid {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .frame {
-          width: 100%;
+          columns: 1;
         }
 
       }
