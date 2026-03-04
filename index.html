@@ -132,7 +132,6 @@
       }
 
       .datetime {
-        display: inline-flex;
         flex-wrap: nowrap;
         gap: 8px;
         align-items: center;
@@ -155,7 +154,6 @@
       }
 
       .weather {
-        display: inline-flex;
         align-items: center;
         justify-content: flex-start;
         gap: 16px;
@@ -369,12 +367,20 @@
 
       .frame-grid {
         min-width: 0;
+        columns: 2 320px;
+        column-gap: 16px;
+      }
+
+      .sidebar-frame-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        grid-auto-rows: min-content;
-        gap: 16px;
-        align-content: start;
-        align-items: start;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .sidebar-frame-grid .frame {
+        margin: 0 auto;
+        width: min(100%, 520px);
       }
 
       .sidebar {
@@ -762,6 +768,10 @@
 
       .frame {
         position: relative;
+        display: inline-flex;
+        width: 100%;
+        margin: 0 0 16px;
+        break-inside: avoid;
         align-self: start;
         border-radius: 22px;
         border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
@@ -1271,6 +1281,10 @@
 
         .spotlight-body {
           grid-template-columns: 1fr;
+        }
+
+        .frame-grid {
+          columns: 1;
         }
 
       }
@@ -2831,6 +2845,27 @@
         if (!framesLoaded) return;
         google.script.run.saveFrames(frames);
       }
+
+      function isSidebarSignupFrame(frame) {
+        var title = frame && frame.title ? String(frame.title).toLowerCase() : '';
+        return title.indexOf('new customer sign-up') !== -1 || title.indexOf('new customer signup') !== -1 || title.indexOf('new customer sign ups') !== -1;
+      }
+
+      function getFrameContainer(frame) {
+        if (isSidebarSignupFrame(frame)) {
+          return document.getElementById('sidebar-frame-grid') || document.getElementById('frame-grid');
+        }
+        return document.getElementById('frame-grid') || document.getElementById('viewing-area');
+      }
+
+      function moveFrameToCorrectContainer(div, frame) {
+        if (!div || !frame) return;
+        var target = getFrameContainer(frame);
+        if (target && div.parentNode !== target) {
+          target.appendChild(div);
+        }
+      }
+
       function addFrame() {
         var frame = {
           id: generateFrameId(),
@@ -2847,8 +2882,7 @@
 
       function createFrame(frame, index) {
         ensureFrameMetadata(frame);
-        var area = document.getElementById('viewing-area');
-        var grid = document.getElementById('frame-grid') || area;
+        var grid = getFrameContainer(frame);
         var div = document.createElement('div');
         div.className = 'frame';
         div.dataset.index = index;
@@ -2899,6 +2933,7 @@
         title.addEventListener('input', function() {
           var idx = parseInt(div.dataset.index, 10);
           frames[idx].title = title.textContent;
+          moveFrameToCorrectContainer(div, frames[idx]);
           saveFrames();
           refreshDashboard(idx);
           var chart = chartInstances[frames[idx].id];
@@ -2920,7 +2955,9 @@
           } else {
             destroyDashboard(div.dataset.frameId);
           }
-          area.removeChild(div);
+          if (div.parentNode) {
+            div.parentNode.removeChild(div);
+          }
           updateFrameIndices();
           saveFrames();
         });
@@ -2946,6 +2983,7 @@
         renderDashboard(dashboardDiv, parseInt(div.dataset.index, 10));
 
         grid.appendChild(div);
+        moveFrameToCorrectContainer(div, frame);
       }
 
       function createDefaultSheet(r, c) {
@@ -3139,10 +3177,12 @@
       }
 
       function updateFrameIndices() {
-        var children = document.querySelectorAll('.viewing-area .frame');
-        children.forEach(function(c, i) {
-          c.dataset.index = i;
-          if (frames[i]) c.dataset.frameId = frames[i].id;
+        frames.forEach(function(frame, i) {
+          if (!frame || !frame.id) return;
+          var card = document.querySelector('.frame[data-frame-id="' + frame.id + '"]');
+          if (!card) return;
+          card.dataset.index = i;
+          card.dataset.frameId = frame.id;
         });
       }
 
@@ -3312,6 +3352,7 @@
               </div>
             </div>
           </div>
+          <div id="sidebar-frame-grid" class="sidebar-frame-grid" aria-label="Team highlight supporting frame area"></div>
         </aside>
       </main>
     </div>
