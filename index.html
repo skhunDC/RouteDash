@@ -1545,7 +1545,20 @@
         }
 
       }
-    </style>
+    
+      .top-nav { display:flex; gap:10px; padding: 10px 20px 0; flex-wrap:wrap; }
+      .top-nav button { background:#f0f4ff; border:1px solid #ccd7ff; border-radius:999px; padding:8px 16px; font-weight:600; }
+      .top-nav button.active { background:#3157d5; color:#fff; }
+      .tab-panel { display:none; }
+      .tab-panel.active { display:block; }
+      .competition-panel { margin:16px 20px; background:#fff; border:1px solid #d9dfea; border-radius:14px; padding:16px; }
+      .competition-actions { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+      .competition-table { width:100%; border-collapse:collapse; }
+      .competition-table th, .competition-table td { border-bottom:1px solid #e6eaf4; padding:8px; text-align:left; }
+      .leader-row { background:#eef8e8; }
+      .patio-link-button { display:inline-flex; gap:8px; align-items:center; background:#1d6f42; color:#fff; padding:10px 14px; border-radius:10px; text-decoration:none; font-weight:700; }
+      .toast { position:fixed; right:20px; bottom:20px; background:#1e293b; color:#fff; padding:10px 14px; border-radius:8px; display:none; z-index:3000; }
+</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <script>
         function updateDateTime() {
@@ -1710,6 +1723,7 @@
         initHeaderTitle();
         initUploads();
         initLockToggle();
+        loadCompetitionBootstrap();
       }
 
       var frames = [];
@@ -3531,6 +3545,213 @@
         }, 5000);
       }
 
+
+
+      var appState = {
+        categories: [],
+        links: {},
+        activeTab: 'dashboard',
+        selectedDate: new Date().toISOString().slice(0, 10)
+      };
+
+      function showToast(message, isError) {
+        var toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.style.display = 'block';
+        toast.style.background = isError ? '#b91c1c' : '#1e293b';
+        setTimeout(function() { toast.style.display = 'none'; }, 2200);
+      }
+
+      function switchTab(tabId) {
+        appState.activeTab = tabId;
+        document.querySelectorAll('.top-nav button').forEach(function(btn) {
+          btn.classList.toggle('active', btn.dataset.tab === tabId);
+        });
+        document.querySelectorAll('.tab-panel').forEach(function(panel) {
+          panel.classList.toggle('active', panel.id === 'tab-panel-' + tabId);
+        });
+      }
+
+      function renderNavTabs() {
+        var nav = document.getElementById('top-nav');
+        if (!nav) return;
+        var staticTabs = [
+          { id: 'dashboard', label: 'Dashboard' },
+          { id: 'competitions', label: 'Competitions' },
+          { id: 'cleaning', label: 'Cleaning Checklist' }
+        ];
+        var dynamicTabs = appState.categories.filter(function(c){ return c.Enabled; }).map(function(c){
+          return { id: 'category-' + c.CategoryKey, label: c.CategoryName };
+        });
+        staticTabs.push.apply(staticTabs, dynamicTabs);
+        staticTabs.push({ id: 'metrics-admin', label: 'Metrics Admin' });
+        staticTabs.push({ id: 'links-admin', label: 'Links Admin' });
+        nav.replaceChildren();
+        staticTabs.forEach(function(tab) {
+          var btn = document.createElement('button');
+          btn.textContent = tab.label;
+          btn.dataset.tab = tab.id;
+          btn.addEventListener('click', function(){
+            switchTab(tab.id);
+            if (tab.id.indexOf('category-') === 0) renderCompetitionTab(tab.id.replace('category-', ''));
+          });
+          nav.appendChild(btn);
+        });
+        switchTab(appState.activeTab);
+      }
+
+      function renderPatioButtons() {
+        var link = appState.links.PATIO_CUSHION_SIGNUP || { label:'Patio Cushion Signup Sheet', url:'#' };
+        ['dashboard-patio-link','patio-main-link'].forEach(function(id){
+          var anchor = document.getElementById(id);
+          if (!anchor) return;
+          anchor.textContent = '🔗 ' + (link.label || 'Patio Cushion Signup Sheet');
+          anchor.href = link.url || '#';
+        });
+      }
+
+      function loadCompetitionBootstrap() {
+        google.script.run.withSuccessHandler(function(payload){
+          appState.categories = (payload && payload.allCategories) || [];
+          renderNavTabs();
+          renderMetricsAdmin();
+        }).getCompetitionCategories();
+
+        google.script.run.withSuccessHandler(function(links){
+          appState.links = links || {};
+          renderLinksAdmin();
+          renderPatioButtons();
+        }).getAppLinks();
+
+        google.script.run.withSuccessHandler(function(data){
+          var list = document.getElementById('competitions-summary');
+          if (!list) return;
+          list.replaceChildren();
+          (data.competitionsSummary || []).forEach(function(item){
+            var li = document.createElement('li');
+            li.textContent = item.categoryName + ': ' + (item.leader || '—') + ' (' + item.leaderValue + ')';
+            list.appendChild(li);
+          });
+        }).getDashboardData();
+      }
+
+      function renderCompetitionTab(categoryKey) {
+        var panel = document.getElementById('dynamic-category-panel');
+        if (!panel) return;
+        panel.id = 'tab-panel-category-' + categoryKey;
+        panel.className = 'tab-panel active';
+        panel.innerHTML = '<div class="competition-panel">Loading…</div>';
+        google.script.run.withSuccessHandler(function(data){
+          var rows = data.rows || [];
+          var html = '<div class="competition-panel"><div class="competition-actions"><strong>' + categoryKey + '</strong><label>Date <input type="date" id="category-date" value="' + appState.selectedDate + '"></label><button id="toggle-edit">Manage</button><button id="save-category" style="display:none;">Save</button><span id="last-updated">Last updated: ' + (data.lastUpdated || 'n/a') + '</span></div>';
+          html += '<table class="competition-table"><thead><tr><th>CSR</th><th>Store</th><th>Value</th><th>Notes</th></tr></thead><tbody>';
+          rows.forEach(function(row, idx){
+            html += '<tr class="' + (idx===0 ? 'leader-row' : '') + '"><td><input data-field="CSR" value="' + (row.CSR || '') + '" disabled></td><td><input data-field="Store" value="' + (row.Store || '') + '" disabled></td><td><input data-field="Value" type="number" value="' + (row.Value || 0) + '" disabled></td><td><input data-field="Notes" value="' + (row.Notes || '') + '" disabled></td></tr>';
+          });
+          html += '</tbody></table>';
+          if (categoryKey === 'patio_signups') {
+            html += '<p style="margin-top:12px;"><a id="patio-main-link" class="patio-link-button" target="_blank" rel="noopener" href="#">🔗 Patio Cushion Signup Sheet</a></p>';
+          }
+          html += '</div>';
+          panel.innerHTML = html;
+          renderPatioButtons();
+          bindCategoryActions(categoryKey);
+        }).getCompetitionCategoryData(categoryKey, appState.selectedDate, '');
+      }
+
+      function bindCategoryActions(categoryKey) {
+        var panel = document.getElementById('tab-panel-category-' + categoryKey);
+        if (!panel) return;
+        var edit = false;
+        panel.querySelector('#toggle-edit').addEventListener('click', function(){
+          edit = !edit;
+          panel.querySelectorAll('tbody input').forEach(function(input){ input.disabled = !edit; });
+          panel.querySelector('#save-category').style.display = edit ? 'inline-block' : 'none';
+        });
+        panel.querySelector('#category-date').addEventListener('change', function(e){
+          appState.selectedDate = e.target.value;
+          renderCompetitionTab(categoryKey);
+        });
+        panel.querySelector('#save-category').addEventListener('click', function(){
+          var rows = Array.from(panel.querySelectorAll('tbody tr')).map(function(tr){
+            var cells = tr.querySelectorAll('input');
+            return {
+              Date: appState.selectedDate,
+              Store: cells[1].value,
+              CSR: cells[0].value,
+              CategoryKey: categoryKey,
+              Value: Number(cells[2].value) || 0,
+              Notes: cells[3].value
+            };
+          });
+          google.script.run.withSuccessHandler(function(){
+            showToast('Competition table saved');
+            renderCompetitionTab(categoryKey);
+          }).withFailureHandler(function(){ showToast('Save failed', true); }).saveCompetitionEntries(rows);
+        });
+      }
+
+      function renderMetricsAdmin() {
+        var panel = document.getElementById('tab-panel-metrics-admin');
+        if (!panel) return;
+        var html = '<div class="competition-panel"><h2>Metrics Admin</h2><table class="competition-table"><thead><tr><th>Key</th><th>Name</th><th>Enabled</th><th>Sort</th><th>Goal</th><th>Notes</th></tr></thead><tbody>';
+        appState.categories.forEach(function(c){
+          html += '<tr><td><input data-field="CategoryKey" value="' + c.CategoryKey + '"></td><td><input data-field="CategoryName" value="' + c.CategoryName + '"></td><td><input data-field="Enabled" type="checkbox" ' + (c.Enabled ? 'checked' : '') + '></td><td><input data-field="SortOrder" type="number" value="' + c.SortOrder + '"></td><td><input data-field="Goal" value="' + (c.Goal || '') + '"></td><td><input data-field="Notes" value="' + (c.Notes || '') + '"></td></tr>';
+        });
+        html += '</tbody></table><button id="add-category-row">Add Category</button> <button id="save-categories">Save Categories</button></div>';
+        panel.innerHTML = html;
+        panel.querySelector('#add-category-row').addEventListener('click', function(){
+          var tbody = panel.querySelector('tbody');
+          var tr = document.createElement('tr');
+          tr.innerHTML = '<td><input data-field="CategoryKey"></td><td><input data-field="CategoryName"></td><td><input data-field="Enabled" type="checkbox" checked></td><td><input data-field="SortOrder" type="number" value="99"></td><td><input data-field="Goal"></td><td><input data-field="Notes"></td>';
+          tbody.appendChild(tr);
+        });
+        panel.querySelector('#save-categories').addEventListener('click', function(){
+          var rows = Array.from(panel.querySelectorAll('tbody tr')).map(function(tr){
+            return {
+              CategoryKey: tr.querySelector('[data-field="CategoryKey"]').value.trim(),
+              CategoryName: tr.querySelector('[data-field="CategoryName"]').value.trim(),
+              Enabled: tr.querySelector('[data-field="Enabled"]').checked,
+              SortOrder: Number(tr.querySelector('[data-field="SortOrder"]').value) || 0,
+              Goal: tr.querySelector('[data-field="Goal"]').value,
+              Notes: tr.querySelector('[data-field="Notes"]').value
+            };
+          });
+          google.script.run.withSuccessHandler(function(){
+            showToast('Categories saved');
+            loadCompetitionBootstrap();
+          }).withFailureHandler(function(){ showToast('Category save failed', true); }).saveCompetitionCategories(rows);
+        });
+      }
+
+      function renderLinksAdmin() {
+        var panel = document.getElementById('tab-panel-links-admin');
+        if (!panel) return;
+        var rows = Object.keys(appState.links).map(function(key){
+          var link = appState.links[key];
+          return '<tr><td><input data-field="Key" value="' + key + '" disabled></td><td><input data-field="Label" value="' + (link.label || '') + '"></td><td><input data-field="Url" value="' + (link.url || '') + '"></td></tr>';
+        }).join('');
+        panel.innerHTML = '<div class="competition-panel"><h2>Links Admin</h2><table class="competition-table"><thead><tr><th>Key</th><th>Label</th><th>URL</th></tr></thead><tbody>' + rows + '</tbody></table><button id="save-links">Save Links</button></div>';
+        panel.querySelector('#save-links').addEventListener('click', function(){
+          var payload = [];
+          var valid = true;
+          panel.querySelectorAll('tbody tr').forEach(function(tr){
+            var url = tr.querySelector('[data-field="Url"]').value.trim();
+            if (url && !/^https?:\/\//i.test(url)) valid = false;
+            payload.push({
+              Key: tr.querySelector('[data-field="Key"]').value,
+              Label: tr.querySelector('[data-field="Label"]').value,
+              Url: url
+            });
+          });
+          if (!valid) return showToast('URL must start with http:// or https://', true);
+          google.script.run.withSuccessHandler(function(){
+            showToast('Links saved');
+            loadCompetitionBootstrap();
+          }).withFailureHandler(function(){ showToast('Link save failed', true); }).saveAppLinks(payload);
+        });
+      }
     </script>
   </head>
   <body onload="init()">
@@ -3580,10 +3801,12 @@
           </div>
         </div>
       </header>
+      <nav id="top-nav" class="top-nav" aria-label="Primary"></nav>
+      <div id="tab-panel-dashboard" class="tab-panel active">
       <main class="main-layout">
         <section class="workspace">
           <div class="workspace-top">
-            <h2>Today's Operations</h2>
+            <h2>Today's Operations</h2><a id="dashboard-patio-link" class="patio-link-button" target="_blank" rel="noopener" href="#">🔗 Patio Cushion Signup Sheet</a>
           </div>
           <div id="viewing-area" class="viewing-area">
             <div id="frame-grid" class="frame-grid"></div>
@@ -3631,6 +3854,13 @@
           <div id="sidebar-frame-grid" class="sidebar-frame-grid" aria-label="Team highlight supporting frame area"></div>
         </aside>
       </main>
+      </div>
+      <section id="tab-panel-competitions" class="tab-panel"><div class="competition-panel"><h2>Competitions</h2><ul id="competitions-summary"></ul><a id="competitions-patio-link" class="patio-link-button" target="_blank" rel="noopener" href="#">🔗 Patio Cushion Signup Sheet</a></div></section>
+      <section id="tab-panel-cleaning" class="tab-panel"><div class="competition-panel"><h2>Cleaning Checklist</h2><p>TV view for checklist content.</p></div></section>
+      <section id="dynamic-category-panel" class="tab-panel"></section>
+      <section id="tab-panel-metrics-admin" class="tab-panel"></section>
+      <section id="tab-panel-links-admin" class="tab-panel"></section>
     </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </body>
 </html>

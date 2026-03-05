@@ -10,12 +10,28 @@ RouteDash is a Google Apps Script powered operations dashboard designed for deli
 - **Driver engagement tools** – A "Driver of the Week" callout, driver spotlight image gallery, and uploader keep the team section fresh. Images are stored in Google Drive and reloaded on subsequent visits.
 - **Daily inspiration** – The app requests a quote from ZenQuotes, caches it for 24 hours via script properties, and falls back to curated quotes when the API is unavailable.
 - **Smooth loading experience** – A progress overlay communicates background work while dashboards initialize, reflecting recent performance-focused commits.
+- **Admin-editable competition tabs** – Metrics Admin lets authorized users add, rename, enable, disable, and sort competition categories that instantly render as their own tabs.
+- **Live links management** – Links Admin lets you edit external links (including Patio Cushion Signup) in-app with no redeploy required.
+
+
+## Competition + links data model
+The app now maintains an app-data spreadsheet (auto-created if missing) with these tabs:
+
+- `Competition_Categories`
+  - `CategoryKey`, `CategoryName`, `Enabled`, `SortOrder`, `Goal`, `Notes`, `UpdatedAt`
+- `Competition_Entries`
+  - `Date`, `Store`, `CSR`, `CategoryKey`, `Value`, `Notes`, `UpdatedAt`
+- `App_Links`
+  - `Key`, `Label`, `Url`, `UpdatedAt`
+
+Use **Metrics Admin** to add/remove/rename category tabs and **Links Admin** to edit the Patio Cushion Signup link. Changes are reflected immediately without redeployment.
 
 ## Project layout
 - `Code.gs` – Google Apps Script backend that serves the UI, fetches weather/quote data, manages Script Properties, and stores driver imagery in Drive.
 - `index.html` – Standalone HTML, CSS, and JavaScript for the front-end. It loads Chart.js from a CDN, renders the interface, synchronizes frame data with Apps Script, and contains the spreadsheet + chart logic.
 - `weather.js` – Node-friendly copy of `weatherCodeToText` used in automated tests.
 - `tests/weather.test.js` – Jest suite validating the weather code mapping.
+- `docs/ADMIN_GUIDE.md` – Admin workflow for dynamic competition tabs, sheets schema, and live links updates.
 
 ## Working with the Apps Script project
 1. Create or open a Google Apps Script project and replace the default files with the contents of `Code.gs` and `index.html`.
