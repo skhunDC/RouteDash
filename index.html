@@ -688,7 +688,7 @@
         inset: 0;
         background: rgba(15, 23, 42, 0.75);
         backdrop-filter: blur(6px);
-        display: none;
+        display: flex;
         align-items: center;
         justify-content: center;
         z-index: 2000;
@@ -750,6 +750,19 @@
         border-radius: 999px;
         background: rgba(var(--brand-primary-rgb), 0.12);
         overflow: hidden;
+      }
+
+      .loading-countdown {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 168px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        background: rgba(var(--brand-primary-rgb), 0.1);
       }
 
       #loading-progress-bar {
@@ -1647,27 +1660,15 @@
             reader.readAsDataURL(file);
           });
         });
-        incrementLoad();
         google.script.run
           .withSuccessHandler(function(src) {
             if (src) document.querySelector('.logo img').src = src;
-            decrementLoad();
-          })
-          .withFailureHandler(function() {
-            decrementLoad();
           })
           .getLogoImage();
-        incrementLoad();
         google.script.run
           .withSuccessHandler(function(list) {
-            preloadImages(list || [], function(images) {
-              setDriverImages(images);
-              startCarousel();
-              decrementLoad();
-            });
-          })
-          .withFailureHandler(function() {
-            decrementLoad();
+            setDriverImages(list || []);
+            startCarousel();
           })
           .getDriverImages();
       }
@@ -1685,15 +1686,11 @@
         updateQuote(true);
         // refresh quote once a day
         setInterval(updateQuote, 86400000);
-        incrementLoad();
         google.script.run
           .withSuccessHandler(function(weather) {
             updateWeather(weather);
-            decrementLoad();
           })
-          .withFailureHandler(function() {
-            decrementLoad();
-          })
+          .withFailureHandler(function() {})
           .getWeather();
         incrementLoad();
         google.script.run
@@ -1720,6 +1717,7 @@
       var loadingOverlayActive = false;
       var loadingStart = null;
       var maxPendingLoads = 0;
+      var loadingCountdownSeconds = 9;
       var chartInstances = {};
       var frameIdCounter = 0;
       var carouselTimer = null;
@@ -2944,20 +2942,34 @@
         var statusEl = document.getElementById('loading-status');
         var detailEl = document.getElementById('loading-detail');
         var barEl = document.getElementById('loading-progress-bar');
+        var countdownEl = document.getElementById('loading-countdown');
         var remaining = Math.max(0, pendingLoads);
         maxPendingLoads = Math.max(maxPendingLoads, remaining);
+        var progress = maxPendingLoads ? (maxPendingLoads - remaining) / maxPendingLoads : remaining === 0 ? 1 : 0;
+        var elapsed = loadingStart ? (performance.now() - loadingStart) / 1000 : 0;
+        if (remaining === 0) {
+          loadingCountdownSeconds = 0;
+        } else if (progress > 0.08) {
+          var projectedSeconds = Math.round((elapsed * (1 - progress)) / progress);
+          loadingCountdownSeconds = Math.max(1, Math.min(60, projectedSeconds));
+        } else {
+          loadingCountdownSeconds = Math.max(1, Math.max(2, 9 - Math.floor(elapsed)));
+        }
         if (statusEl) {
           statusEl.textContent = remaining > 0
             ? 'Preparing Dashboard for our Route Team!!'
             : 'Wrapping up…';
         }
         if (detailEl) {
-          var elapsed = loadingStart ? (performance.now() - loadingStart) / 1000 : 0;
           var statusText = remaining > 0 ? remaining + ' task' + (remaining === 1 ? '' : 's') + ' remaining' : 'Ready';
-          detailEl.textContent = statusText + ' • ' + elapsed.toFixed(1) + 's elapsed';
+          detailEl.textContent = statusText;
+        }
+        if (countdownEl) {
+          countdownEl.textContent = remaining > 0
+            ? 'About ' + loadingCountdownSeconds + 's remaining'
+            : 'Finalizing…';
         }
         if (barEl) {
-          var progress = maxPendingLoads ? (maxPendingLoads - remaining) / maxPendingLoads : remaining === 0 ? 1 : 0;
           var percent = remaining === 0 ? 100 : Math.min(92, Math.max(18, Math.round(progress * 100)));
           barEl.style.width = percent + '%';
         }
@@ -2969,6 +2981,7 @@
         loadingOverlayActive = true;
         overlay.style.display = 'flex';
         loadingStart = performance.now();
+        loadingCountdownSeconds = 9;
         if (loadingTimer) clearInterval(loadingTimer);
         updateLoadingStatus();
         loadingTimer = setInterval(updateLoadingStatus, 120);
@@ -2987,6 +3000,7 @@
           loadingOverlayActive = false;
           loadingStart = null;
           maxPendingLoads = 0;
+          loadingCountdownSeconds = 9;
           var barEl = document.getElementById('loading-progress-bar');
           if (barEl) barEl.style.width = '0%';
         }, 220);
@@ -3485,23 +3499,6 @@
         }
       }
 
-      function preloadImages(list, cb) {
-        if (!list.length) {
-          cb([]);
-          return;
-        }
-        var remaining = list.length;
-        var results = new Array(list.length);
-        list.forEach(function(src, index) {
-          var img = new Image();
-          img.onload = img.onerror = function() {
-            results[index] = src;
-            if (--remaining === 0) cb(results);
-          };
-          img.src = src;
-        });
-      }
-
       function renderCarouselImage(index) {
         var track = document.getElementById('carousel-track');
         if (!track) return;
@@ -3513,6 +3510,8 @@
         var img = document.createElement('img');
         img.src = driverImages[imageIndex];
         img.alt = 'Driver spotlight photo ' + (imageIndex + 1);
+        img.loading = 'lazy';
+        img.decoding = 'async';
         item.appendChild(img);
         track.appendChild(item);
       }
@@ -3531,9 +3530,11 @@
         }, 5000);
       }
 
+      document.addEventListener('DOMContentLoaded', init);
+
     </script>
   </head>
-  <body onload="init()">
+  <body>
     <div id="loading-overlay" role="status" aria-live="polite">
       <div class="loading-card">
         <div class="loading-spinner" aria-hidden="true"></div>
@@ -3543,6 +3544,7 @@
           </strong>
           <span id="loading-detail">Starting up</span>
         </div>
+        <span id="loading-countdown" class="loading-countdown">About 9s remaining</span>
         <div class="loading-progress" aria-hidden="true">
           <div id="loading-progress-bar"></div>
         </div>
